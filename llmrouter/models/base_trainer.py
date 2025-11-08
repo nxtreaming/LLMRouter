@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import torch
-
+import joblib
 
 class BaseTrainer(ABC):
     """
@@ -44,7 +44,6 @@ class BaseTrainer(ABC):
     # Abstract methods to be customized by each baseline
     # ------------------------------------------------------------------
 
-    @abstractmethod
     def loss_func(self, outputs, batch) -> torch.Tensor:
         """
         Compute task-specific loss.
@@ -133,6 +132,14 @@ class BaseTrainer(ABC):
         self.router.load_state_dict(ckpt["model"])
         self.optimizer.load_state_dict(ckpt["optimizer"])
         print(f"📂 Checkpoint loaded from: {path}")
+
+
+    def save_model_lib(self, save_path: str):
+        joblib.dump(self.router, save_path)
+
+    def load_model_lib(self, load_path: str):
+        self.router= joblib.load(load_path)
+
 
     # ------------------------------------------------------------------
     # Internal helpers

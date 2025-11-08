@@ -87,3 +87,11 @@ def generate_task_query(task_name, sample_data):
         return format_commonsense_qa_prompt(sample_data['query'], sample_data['choices'])
     else:
         raise ValueError(f"Unknown task name: {task_name}")
+
+
+
+
+
+
+
+

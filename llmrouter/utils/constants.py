@@ -32,7 +32,10 @@ TASK_CATEGORIES = {
 
 
 # Hugging Face token
-HF_TOKEN = "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"
+HF_TOKEN = ""
 
 # Default configuration
 CASE_NUM = 500  # Number of samples per task
+
+# API keys
+API_KEYS = ""

@@ -33,8 +33,8 @@ class DataLoader:
             return None
 
         # Query data
-        obj_ref.query_data_train = safe_load("query_data_train", jsonl_to_csv, "query_data_train")
-        obj_ref.query_data_test = safe_load("query_data_test", jsonl_to_csv, "query_data_test")
+        obj_ref.query_data_train = safe_load("query_data_train", load_jsonl, "query_data_train")
+        obj_ref.query_data_test = safe_load("query_data_test", load_jsonl, "query_data_test")
 
         # Embeddings
         obj_ref.query_embedding_data = safe_load("query_embedding_data", load_pt, "query_embedding_data")

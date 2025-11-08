@@ -36,7 +36,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModel
 
 # Import utils
-from utils import (
+from llmrouter.utils import (
     setup_environment, TASK_DESCRIPTIONS, CASE_NUM,
     get_bert_representation, parallel_embedding_task,
     generate_embeddings_for_data

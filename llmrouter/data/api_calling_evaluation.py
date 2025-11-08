@@ -37,7 +37,7 @@ from tqdm import tqdm
 from litellm import Router
 
 # Import utils
-from utils import (
+from llmrouter.utils import (
     setup_environment, API_KEYS,
     format_mc_prompt, format_gsm8k_prompt, format_math_prompt,
     format_commonsense_qa_prompt, format_mbpp_prompt, format_humaneval_prompt,
@@ -46,7 +46,7 @@ from utils import (
 )
 
 # Import evaluation functions
-from utils import f1_score, exact_match_score, get_bert_score, evaluate_code, cem_score
+from llmrouter.utils import f1_score, exact_match_score, get_bert_score, evaluate_code, cem_score
 from human_eval.evaluate_functional_correctness import entry_point_item
 from mbpp.mbpp_eval import entry_point_item_mbpp
 from math_eval import last_boxed_only_string, remove_boxed, is_equiv

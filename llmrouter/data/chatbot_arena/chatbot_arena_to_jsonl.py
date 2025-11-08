@@ -31,7 +31,7 @@ import pandas as pd
 from datasets import load_dataset
 
 # Import utils
-from utils import (
+from llmrouter.utils import (
     setup_environment, HF_TOKEN,
     process_final_data, generate_embeddings_for_data,
     aggregate_arena_preferences_by_query, calculate_arena_model_scores,

@@ -67,7 +67,23 @@ class MetaRouter(nn.Module, ABC):
     # ------------------------------------------------------------------
 
     @abstractmethod
-    def route(self, batch):
+    def route_batch(self, batch):
+        """
+        Define how routing decisions are computed.
+
+        Args:
+            batch (Any):
+                Input batch for routing. The exact structure (dict, tensor, etc.)
+                is defined by each specific router implementation.
+
+        Returns:
+            Any:
+                Routing outputs such as logits, scores, or selected model indices.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def route_single(self, batch):
         """
         Define how routing decisions are computed.
 

@@ -3,6 +3,15 @@
 import torch
 from llmrouter.models.base_trainer import BaseTrainer
 
+# 2. Wrap model into a router
+router = GraphRouter(model=model, yaml_path="configs/graph_router.yaml")
+
+# 3. Instantiate trainer with this router
+trainer = GraphRouterTrainer(router=router, device="cuda")
+
+# 4. Train using any PyTorch-style dataloader
+trainer.train(train_dataloader)
+
 
 class GraphRouterTrainer(BaseTrainer):
     """
