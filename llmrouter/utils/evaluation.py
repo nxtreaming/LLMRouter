@@ -3,7 +3,7 @@ import re
 import string
 import pickle
 from collections import Counter
-from typing import List, Optional, Tuple,Optional, Union
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -11,7 +11,6 @@ from sentence_transformers import SentenceTransformer
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from bert_score import score
-import litellm
 
 # Initialize the sentence transformer model
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -365,89 +364,3 @@ def evaluate_code(generated_code, test_cases, timeout=5):
     finally:
         # Disable the alarm
         signal.alarm(0)
-
-# LLM prompting
-# def model_prompting(
-#         llm_model: str,
-#         prompt: str,
-#         return_num: Optional[int] = 1,
-#         max_token_num: Optional[int] = 512,
-#         temperature: Optional[float] = 0.0,
-#         top_p: Optional[float] = None,
-#         stream: Optional[bool] = None,
-# ) -> str:
-#     """
-#     Get a response from an LLM model using LiteLLM.
-#
-#     Args:
-#         llm_model: Name of the model to use
-#         prompt: Input prompt text
-#         return_num: Number of completions to generate
-#         max_token_num: Maximum number of tokens to generate
-#         temperature: Sampling temperature
-#         top_p: Top-p sampling parameter
-#         stream: Whether to stream the response
-#
-#     Returns:
-#         Generated text response
-#     """
-#     completion = litellm.completion(
-#         model=llm_model,
-#         messages=[{'role': 'user', 'content': prompt}],
-#         max_tokens=max_token_num,
-#         api_key= "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",
-#         api_base="https://integrate.api.nvidia.com/v1",
-#         n=return_num,
-#         top_p=top_p,
-#         temperature=temperature,
-#         stream=stream,
-#     )
-#     content = completion.choices[0].message.content
-#     return content
-
-from openai import OpenAI
-client = OpenAI(
-    base_url="https://integrate.api.nvidia.com/v1",
-    api_key="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",  # 替换为你的 API key
-    timeout=300,
-    max_retries=2
-)
-
-def model_prompting(
-    llm_model: str,
-    prompt: str,
-    max_token_num: Optional[int] = 512,
-    temperature: Optional[float] = 0.2,
-    top_p: Optional[float] = 0.7,
-    stream: Optional[bool] = True,
-) -> Union[str, None]:
-    """
-    Get a response from an LLM model using the OpenAI-compatible NVIDIA API.
-
-    Args:
-        llm_model: Name of the model to use (e.g., "nvdev/nvidia/llama-3.1-nemotron-70b-instruct")
-        prompt: Input prompt text
-        return_num: Number of completions to generate
-        max_token_num: Maximum number of tokens to generate
-        temperature: Sampling temperature
-        top_p: Top-p sampling parameter
-        stream: Whether to stream the response
-
-    Returns:
-        Generated text response (or None if streaming is enabled)
-    """
-    completion = client.chat.completions.create(
-        model=llm_model,
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=max_token_num,
-        temperature=temperature,
-        top_p=top_p,
-        stream=stream
-    )
-
-    response_text = ""
-    for chunk in completion:
-        if chunk.choices[0].delta.content is not None:
-            response_text += chunk.choices[0].delta.content
-    # print(response_text)
-    return response_text
