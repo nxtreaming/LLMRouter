@@ -1,10 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
 import os
-import pickle
-import numpy as np
 import torch.nn as nn
 import copy
-import re
 from sklearn.neighbors import KNeighborsClassifier
 from llmrouter.models.meta_router import MetaRouter
 from llmrouter.utils import load_model, get_longformer_embedding, call_api
@@ -126,8 +123,8 @@ Let's think step by step.
         self.use_local_llm = self.cfg.get("use_local_llm", False) and VLLM_AVAILABLE
         
         # API configuration for execution
+        # Note: API keys are handled via environment variable API_KEYS in call_api()
         self.api_endpoint = self.cfg.get("api_endpoint", "https://integrate.api.nvidia.com/v1")
-        self.api_key = self.cfg.get("api_key", None)
         
         # Load KNN model path for routing
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
