@@ -15,6 +15,8 @@ from .mlprouter import MLPTrainer
 from .knnmultiroundrouter import KNNMultiRoundRouter
 from .knnmultiroundrouter import KNNMultiRoundRouterTrainer
 
+from .llmmultiroundrouter import LLMMultiRoundRouter
+
 
 __all__ = [
     "MetaRouter",
@@ -29,4 +31,5 @@ __all__ = [
     "MLPTrainer",
     "KNNMultiRoundRouter",
     "KNNMultiRoundRouterTrainer",
+    "LLMMultiRoundRouter",
 ]
