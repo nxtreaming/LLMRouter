@@ -149,7 +149,6 @@ def check_llm_name(target_llm):
             else:
                 LLM_NAME = "meta/llama-3.1-8b-instruct"
         else:
-            # print("!!!!!!!!!!!LLM Name Error!!!!!!!!!!!", target_llm)
             LLM_NAME = ""
     elif "mistral" in target_llm:
         LLM_NAME = "mistralai/mistral-7b-instruct-v0.3"
@@ -161,7 +160,6 @@ def check_llm_name(target_llm):
         LLM_NAME = "google/gemma-2-27b-it"
         TAU = 0.1
     else:
-        # print("!!!!!!!!!!!LLM Name Error!!!!!!!!!!!", target_llm)
         LLM_NAME = ""
 
     return LLM_NAME, TAU
