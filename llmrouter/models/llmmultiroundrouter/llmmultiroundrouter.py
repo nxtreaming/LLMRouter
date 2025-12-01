@@ -152,13 +152,13 @@ Let's think step by step.
 
     def route_batch(self, batch: Optional[Any] = None, task_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Route a batch of queries through decomposition and routing (no execution/aggregation).
+        Route a batch of queries through the full pipeline: decompose+route → execute → aggregate.
         
-        This method performs:
-        1. Decomposes each initial query into sub-queries and routes each using LLM (in one step)
-        2. Returns only the routed model names (no execution or aggregation)
-        
-        Task-specific prompt formatting is applied if task_name is provided.
+        This method performs the same end-to-end processing as route_single() for each query:
+        1. Applies task-specific prompt formatting if task_name is provided
+        2. Decomposes each initial query into sub-queries and routes each using LLM (in one step)
+        3. Executes each sub-query with the routed model
+        4. Aggregates all responses into a final answer
 
         Args:
             batch (Any, optional):
@@ -173,7 +173,10 @@ Let's think step by step.
                 A list of query dictionaries, each updated with:
                     - "query": original query text (preserved)
                     - "formatted_query": formatted query if task_name was provided (optional)
-                    - "model_name": list of routed model names (one per sub-query)
+                    - "response": final aggregated answer
+                    - "prompt_tokens": total prompt tokens used
+                    - "completion_tokens": total completion tokens used
+                    - "success": whether the pipeline succeeded
         """
         # Determine which data to use
         if batch is not None:
@@ -216,12 +219,14 @@ Let's think step by step.
             else:
                 query_text_for_routing = original_query
 
-            # Step 1: Decompose query into sub-queries and route each (in one LLM call)
-            sub_query_routes = self._decompose_and_route(query_text_for_routing)
-            routed_models = [model for _, model in sub_query_routes]
+            # Use route_single to process the full pipeline (decompose+route → execute → aggregate)
+            routing_result = self.route_single({
+                "query": query_text_for_routing,
+                "task_name": row_task_name
+            })
             
-            # Update row with routing results (only model names, no execution)
-            row_copy["model_name"] = routed_models
+            # Update row with routing and execution results
+            row_copy.update(routing_result)
             query_data_output.append(row_copy)
 
         return query_data_output
