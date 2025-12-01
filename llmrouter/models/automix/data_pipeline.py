@@ -47,23 +47,28 @@ def _env_or(default_value: str, *env_keys: str) -> str:
     return default_value
 
 
+# Global OpenAI client instance
+_openai_client = None
+
+
 def init_providers() -> None:
     """
     Initialize API providers (HuggingFace, OpenAI, etc.).
 
     This function should be called before using any API-based functions.
     """
+    global _openai_client
     try:
         from huggingface_hub import login
-        import openai
+        from openai import OpenAI
 
         os.environ.pop("HF_ENDPOINT", None)
         hf_token = _env_or(
-            "your_hf_token", "HF_TOKEN", "HUGGINGFACE_TOKEN"
+            "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", "HF_TOKEN", "HUGGINGFACE_TOKEN"
         )
         login(token=hf_token)
 
-        openai.api_key = _env_or(
+        api_key = _env_or(
             (
                 "your_api_key"
             ),
@@ -71,9 +76,14 @@ def init_providers() -> None:
             "NVIDIA_API_KEY",
             "NVAPI_KEY",
         )
-        openai.api_base = _env_or(
-            "https://integrate.api.nvidia.com/v1", "OPENAI_API_BASE", "NVIDIA_API_BASE"
+        api_base = _env_or(
+            "https://integrate.api.nvidia.com/v1",
+            "OPENAI_API_BASE",
+            "NVIDIA_API_BASE",
         )
+
+        # Initialize OpenAI client with new API (>=1.0.0)
+        _openai_client = OpenAI(api_key=api_key, base_url=api_base)
     except ImportError:
         print("Warning: Some API providers could not be initialized")
 
@@ -213,10 +223,13 @@ def call_openai_api(
     Returns:
         Single response string or list of responses
     """
-    try:
-        import openai
-    except ImportError:
-        print("Error: openai package not installed")
+    global _openai_client
+
+    if _openai_client is None:
+        init_providers()
+
+    if _openai_client is None:
+        print("Error: OpenAI client not initialized")
         return None
 
     all_responses = []
@@ -225,16 +238,18 @@ def call_openai_api(
     try:
         while n > 0:
             current_batch_size = min(n, batch_size)
-            response = openai.ChatCompletion.create(
+            # Use new OpenAI API (>=1.0.0)
+            response = _openai_client.chat.completions.create(
                 model=engine_name,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
                 n=current_batch_size,
                 max_tokens=max_tokens,
+                stop=stop if stop else None,
             )
-            all_responses.extend(
-                [choice["message"]["content"] for choice in response["choices"]]
-            )
+            all_responses.extend([
+                choice.message.content for choice in response.choices
+            ])
             n -= current_batch_size
         return all_responses if orig_n > 1 else all_responses[0]
     except Exception as e:
