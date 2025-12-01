@@ -1,8 +1,7 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 import os
 import torch.nn as nn
 import copy
-import re
 from llmrouter.models.meta_router import MetaRouter
 from llmrouter.utils import call_api, generate_task_query
 
@@ -102,6 +101,131 @@ Let's think step by step.
         # Note: API keys are handled via environment variable API_KEYS in call_api()
         self.api_endpoint = self.cfg.get("api_endpoint", "https://integrate.api.nvidia.com/v1")
 
+    def route_single(self, query: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Route a single query through the full pipeline: decompose+route → execute → aggregate.
+        
+        This method performs end-to-end processing:
+        1. Decomposes the initial query into sub-queries and routes each using LLM (in one step)
+        2. Executes each sub-query with the routed model
+        3. Aggregates all responses into a final answer
+
+        Args:
+            query (dict):
+                A single query dictionary. Must contain the key:
+                    - "query": textual input to be processed.
+                Optional keys:
+                    - "task_name": Task name for prompt selection during aggregation
+
+        Returns:
+            dict:
+                Updated query dictionary containing:
+                    - "query": original query text
+                    - "response": final aggregated answer
+                    - "prompt_tokens": total prompt tokens used
+                    - "completion_tokens": total completion tokens used
+                    - "success": whether the pipeline succeeded
+        """
+        original_query = query.get("query", "")
+        task_name = query.get("task_name", None)
+        
+        # Step 1: Decompose query into sub-queries and route each (in one LLM call)
+        sub_query_routes = self._decompose_and_route(original_query)
+        sub_queries = [sq for sq, _ in sub_query_routes]
+        
+        # Step 2: Execute each sub-query with the routed model
+        sub_responses = []
+        for sub_query, model_name in sub_query_routes:
+            execution_result = self._execute_sub_query(sub_query, model_name)
+            sub_responses.append(execution_result)
+        
+        # Step 3: Aggregate responses into final answer
+        final_answer = self._aggregate_responses(original_query, sub_queries, sub_responses, task_name)
+        
+        # Return final result
+        query_output = copy.copy(query)
+        query_output["response"] = final_answer
+        query_output["prompt_tokens"] = sum(r.get("prompt_tokens", 0) for r in sub_responses)
+        query_output["completion_tokens"] = sum(r.get("completion_tokens", 0) for r in sub_responses)
+        query_output["success"] = all(r.get("success", False) for r in sub_responses)
+        return query_output
+
+    def route_batch(self, batch: Optional[Any] = None, task_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Route a batch of queries through decomposition and routing (no execution/aggregation).
+        
+        This method performs:
+        1. Decomposes each initial query into sub-queries and routes each using LLM (in one step)
+        2. Returns only the routed model names (no execution or aggregation)
+        
+        Task-specific prompt formatting is applied if task_name is provided.
+
+        Args:
+            batch (Any, optional):
+                If provided, routes the provided batch. If None, uses self.query_data_test from loaded data.
+            task_name (str, optional):
+                Task name for prompt formatting (e.g., "mmlu", "gsm8k", "commonsense_qa").
+                If provided, queries will be formatted using task-specific prompts before routing.
+                If None, queries are routed as-is. Can also be extracted from each row's 'task_name' field.
+
+        Returns:
+            list of dict:
+                A list of query dictionaries, each updated with:
+                    - "query": original query text (preserved)
+                    - "formatted_query": formatted query if task_name was provided (optional)
+                    - "model_name": list of routed model names (one per sub-query)
+        """
+        # Determine which data to use
+        if batch is not None:
+            query_data = batch if isinstance(batch, list) else [batch]
+        else:
+            if hasattr(self, "query_data_test") and self.query_data_test is not None:
+                query_data = copy.copy(self.query_data_test)
+            else:
+                print("Warning: No batch provided and no test data available for batch routing.")
+                return []
+
+        query_data_output = []
+        for row in query_data:
+            # Handle both dict and non-dict inputs
+            if isinstance(row, dict):
+                row_copy = copy.copy(row)
+                original_query = row_copy.get("query", "")
+                # Use task_name from row if available, otherwise use parameter
+                row_task_name = row_copy.get("task_name", task_name)
+            else:
+                row_copy = {"query": str(row)}
+                original_query = str(row)
+                row_task_name = task_name
+
+            # Format query if task_name is provided
+            if row_task_name:
+                try:
+                    # Prepare sample_data dict for generate_task_query
+                    sample_data = {
+                        "query": original_query,
+                        "choices": row_copy.get("choices", None) if isinstance(row_copy, dict) else None
+                    }
+                    formatted_query = generate_task_query(row_task_name, sample_data)
+                    row_copy["formatted_query"] = formatted_query
+                    query_text_for_routing = formatted_query
+                except (ValueError, KeyError) as e:
+                    # If formatting fails, fall back to original query
+                    print(f"Warning: Failed to format query with task '{row_task_name}': {e}. Using original query.")
+                    query_text_for_routing = original_query
+            else:
+                query_text_for_routing = original_query
+
+            # Step 1: Decompose query into sub-queries and route each (in one LLM call)
+            sub_query_routes = self._decompose_and_route(query_text_for_routing)
+            routed_models = [model for _, model in sub_query_routes]
+            
+            # Update row with routing results (only model names, no execution)
+            row_copy["model_name"] = routed_models
+            query_data_output.append(row_copy)
+
+        return query_data_output
+
     def _build_model_descriptions(self) -> str:
         """
         Build model descriptions string from llm_data for use in routing prompts.
@@ -159,130 +283,6 @@ Focus entirely on maximizing effectiveness and providing the most accurate and r
 """
         return prompt
 
-    def route_single(self, query: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Route a single query (sub-query) using LLM-based reasoning and execute it.
-        
-        Note: This method routes a single query. For full multi-round pipeline with
-        decomposition, use answer_query() instead.
-
-        Args:
-            query (dict):
-                A single query dictionary. Must contain the key:
-                    - "query": textual input (sub-query) to be routed and executed.
-
-        Returns:
-            dict:
-                Updated query dictionary containing:
-                    - "query": original query text
-                    - "model_name": predicted model name
-                    - "response": LLM response text
-                    - "prompt_tokens": number of prompt tokens used
-                    - "completion_tokens": number of completion tokens used
-                    - "success": whether the API call succeeded
-        """
-        # For single query routing, we still need to use LLM to decide
-        # This is a simplified version that routes a single sub-query
-        query_text = query.get("query", "")
-        
-        # Build a simple routing prompt
-        routing_prompt = f"""Given the sub-query '{query_text}', select the single LLM that is most likely to generate the highest-quality response.
-
-{self.model_descriptions}
-
-Output only the full name of the selected model. Do not include any other text."""
-        
-        model_name = self._call_llm_for_routing(routing_prompt)
-        
-        # Execute the query using the routed model
-        execution_result = self._execute_sub_query(query_text, model_name)
-        
-        query_output = copy.copy(query)
-        query_output["model_name"] = model_name
-        query_output["response"] = execution_result.get("response", "")
-        query_output["prompt_tokens"] = execution_result.get("prompt_tokens", 0)
-        query_output["completion_tokens"] = execution_result.get("completion_tokens", 0)
-        query_output["success"] = execution_result.get("success", False)
-        return query_output
-
-    def route_batch(self, batch: Optional[Any] = None, task_name: Optional[str] = None) -> List[Dict[str, Any]]:
-        """
-        Route a batch of queries (sub-queries) using LLM-based reasoning.
-
-        Args:
-            batch (Any, optional):
-                If provided, routes the provided batch. If None, uses self.query_data_test from loaded data.
-            task_name (str, optional):
-                Task name for prompt formatting (e.g., "mmlu", "gsm8k", "commonsense_qa").
-                If provided, queries will be formatted using task-specific prompts before routing.
-                If None, queries are routed as-is. Can also be extracted from each row's 'task_name' field.
-
-        Returns:
-            list of dict:
-                A list of query dictionaries, each updated with:
-                    - "query": original query text (preserved)
-                    - "formatted_query": formatted query if task_name was provided (optional)
-                    - "model_name": predicted model name
-                    - "response": LLM response text
-                    - "prompt_tokens": number of prompt tokens used
-                    - "completion_tokens": number of completion tokens used
-                    - "success": whether the API call succeeded
-        """
-        # Determine which data to use
-        if batch is not None:
-            query_data = batch if isinstance(batch, list) else [batch]
-        else:
-            if hasattr(self, "query_data_test") and self.query_data_test is not None:
-                query_data = copy.copy(self.query_data_test)
-            else:
-                print("Warning: No batch provided and no test data available for batch routing.")
-                return []
-
-        query_data_output = []
-        for row in query_data:
-            # Handle both dict and non-dict inputs
-            if isinstance(row, dict):
-                row_copy = copy.copy(row)
-                original_query = row_copy.get("query", "")
-                # Use task_name from row if available, otherwise use parameter
-                row_task_name = row_copy.get("task_name", task_name)
-            else:
-                row_copy = {"query": str(row)}
-                original_query = str(row)
-                row_task_name = task_name
-
-            # Format query if task_name is provided
-            if row_task_name:
-                try:
-                    # Prepare sample_data dict for generate_task_query
-                    sample_data = {
-                        "query": original_query,
-                        "choices": row_copy.get("choices", None) if isinstance(row_copy, dict) else None
-                    }
-                    formatted_query = generate_task_query(row_task_name, sample_data)
-                    row_copy["formatted_query"] = formatted_query
-                    query_text_for_routing = formatted_query
-                except (ValueError, KeyError) as e:
-                    # If formatting fails, fall back to original query
-                    print(f"Warning: Failed to format query with task '{row_task_name}': {e}. Using original query.")
-                    query_text_for_routing = original_query
-            else:
-                query_text_for_routing = original_query
-
-            # Route and execute the query
-            routing_result = self.route_single({"query": query_text_for_routing})
-            
-            # Update row with routing and execution results
-            row_copy["model_name"] = routing_result.get("model_name", "")
-            row_copy["response"] = routing_result.get("response", "")
-            row_copy["prompt_tokens"] = routing_result.get("prompt_tokens", 0)
-            row_copy["completion_tokens"] = routing_result.get("completion_tokens", 0)
-            row_copy["success"] = routing_result.get("success", False)
-            
-            query_data_output.append(row_copy)
-
-        return query_data_output
-
     def _initialize_local_llm(self):
         """Initialize local LLM for decomposition+routing and aggregation if not already initialized."""
         if not self.use_local_llm or self.local_llm is not None:
@@ -300,47 +300,6 @@ Output only the full name of the selected model. Do not include any other text."
         except Exception as e:
             print(f"⚠️  Failed to initialize local LLM: {e}. Will use API calls instead.")
             self.use_local_llm = False
-    
-    def _call_llm_for_routing(self, prompt: str) -> str:
-        """
-        Call LLM (local or API) to get routing decision.
-        
-        Args:
-            prompt: Prompt for routing decision
-            
-        Returns:
-            Model name string
-        """
-        if self.use_local_llm:
-            self._initialize_local_llm()
-            if self.local_llm is not None:
-                prompt_text = self.local_tokenizer.apply_chat_template(
-                    [{"role": "user", "content": prompt}],
-                    tokenize=False,
-                    add_generation_prompt=True
-                )
-                sampling_params = SamplingParams(temperature=0.0, top_p=0.95, max_tokens=128)
-                outputs = self.local_llm.generate([prompt_text], sampling_params)
-                response = outputs[0].outputs[0].text.strip()
-            else:
-                response = ""
-        else:
-            # Use API call
-            request = {
-                "api_endpoint": self.api_endpoint,
-                "query": prompt,
-                "model_name": self.base_model,
-                "api_name": self.base_model
-            }
-            try:
-                result = call_api(request, max_tokens=128, temperature=0.0)
-                response = result.get("response", "")
-            except Exception as e:
-                print(f"Error calling LLM for routing: {e}")
-                response = ""
-        
-        # Parse model name from response
-        return self._parse_model_name(response)
     
     def _parse_model_name(self, response: str) -> str:
         """
@@ -613,59 +572,3 @@ Format:
                 final_answer = ""
         
         return final_answer
-    
-    def answer_query(
-        self, 
-        query: str, 
-        task_name: Optional[str] = None,
-        return_intermediate: bool = False
-    ) -> Union[str, Dict[str, Any]]:
-        """
-        Process a query through the full pipeline: decompose+route → execute → aggregate.
-        
-        This is the main method that handles the entire multi-round process.
-        For LLM routing, decomposition and routing happen together in a single LLM call.
-        
-        Args:
-            query: Original query to answer
-            task_name: Optional task name (for prompt selection)
-            return_intermediate: If True, return intermediate results along with final answer
-            
-        Returns:
-            If return_intermediate=False: Final answer string
-            If return_intermediate=True: Dict with:
-                - "final_answer": Final aggregated answer
-                - "sub_queries": List of sub-queries
-                - "routes": List of routed model names
-                - "sub_responses": List of sub-query responses
-                - "metadata": Additional metadata
-        """
-        # Step 1: Decompose and route in one step using LLM
-        sub_query_routes = self._decompose_and_route(query)
-        sub_queries = [sq for sq, _ in sub_query_routes]
-        routes = [model for _, model in sub_query_routes]
-        
-        # Step 2: Execute each sub-query
-        sub_responses = []
-        for sub_query, model_name in sub_query_routes:
-            response = self._execute_sub_query(sub_query, model_name)
-            sub_responses.append(response)
-        
-        # Step 3: Aggregate responses into final answer
-        final_answer = self._aggregate_responses(query, sub_queries, sub_responses, task_name)
-        
-        if return_intermediate:
-            return {
-                "final_answer": final_answer,
-                "sub_queries": sub_queries,
-                "routes": routes,
-                "sub_responses": sub_responses,
-                "metadata": {
-                    "num_sub_queries": len(sub_queries),
-                    "task_name": task_name,
-                    "routing_method": "llm_prompt"
-                }
-            }
-        else:
-            return final_answer
-

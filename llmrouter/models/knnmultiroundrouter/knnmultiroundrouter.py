@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 import os
 import torch.nn as nn
 import copy
@@ -129,63 +129,90 @@ Let's think step by step.
         # Load KNN model path for routing
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         self.knn_model_path = os.path.join(project_root, self.cfg["model_path"]["load_model_path"])
+        
+        # Lazy loading flag for KNN model
+        self.knn_model_loaded = False
+
+    def _load_knn_model_if_needed(self):
+        """Load KNN model once at inference time with proper error handling."""
+        if self.knn_model_loaded:
+            return
+        
+        try:
+            self.knn_model = load_model(self.knn_model_path)
+            self.knn_model_loaded = True
+            print(f"[KNNMultiRoundRouter] Loaded KNN model from {self.knn_model_path}")
+        except Exception as e:
+            print(f"Error loading KNN model from {self.knn_model_path}: {e}")
+            raise RuntimeError(f"Failed to load KNN model. Please ensure the model is trained and saved at {self.knn_model_path}")
 
     def route_single(self, query: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Route a single query (sub-query) using the pre-trained KNN model and execute it.
-
-        The method embeds the input query text using Longformer, predicts the most similar
-        LLM model based on the trained KNN classifier, then executes the query using that model.
+        Route a single query through the full pipeline: decompose → route → execute → aggregate.
+        
+        This method performs end-to-end processing:
+        1. Decomposes the initial query into sub-queries
+        2. Routes each sub-query using KNN
+        3. Executes each sub-query with the routed model
+        4. Aggregates all responses into a final answer
 
         Args:
             query (dict):
                 A single query dictionary. Must contain the key:
-                    - "query": textual input (sub-query) to be embedded and executed.
+                    - "query": textual input to be processed.
                 Optional keys:
-                    - "original_query": The original query before decomposition
-                    - "sub_query_index": Index of this sub-query in the sequence
+                    - "task_name": Task name for prompt selection during aggregation
 
         Returns:
             dict:
                 Updated query dictionary containing:
                     - "query": original query text
-                    - "model_name": predicted model name
-                    - "response": LLM response text
-                    - "prompt_tokens": number of prompt tokens used
-                    - "completion_tokens": number of completion tokens used
-                    - "success": whether the API call succeeded
+                    - "response": final aggregated answer
+                    - "prompt_tokens": total prompt tokens used
+                    - "completion_tokens": total completion tokens used
+                    - "success": whether the pipeline succeeded
         """
         # Load KNN model if not already loaded
-        if not hasattr(self, 'knn_model_path'):
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            self.knn_model_path = os.path.join(project_root, self.cfg["model_path"]["load_model_path"])
+        self._load_knn_model_if_needed()
         
-        self.knn_model = load_model(self.knn_model_path)
-
-        # Compute query embedding and predict model
-        query_text = query.get("query", "")
-        query_embedding = [get_longformer_embedding(query_text).numpy()]
-        model_name = self.knn_model.predict(query_embedding)[0]
-
-        # Execute the query using the routed model
-        execution_result = self._execute_sub_query(query_text, model_name)
-
-        # Return updated query with prediction and execution results
+        original_query = query.get("query", "")
+        task_name = query.get("task_name", None)
+        
+        # Step 1: Decompose query into sub-queries
+        sub_queries = self._decompose_query(original_query)
+        
+        # Step 2: Route and execute each sub-query
+        sub_responses = []
+        for sub_query in sub_queries:
+            # Route the sub-query using KNN
+            query_embedding = [get_longformer_embedding(sub_query).numpy()]
+            model_name = self.knn_model.predict(query_embedding)[0]
+            
+            # Execute the sub-query with the routed model
+            execution_result = self._execute_sub_query(sub_query, model_name)
+            sub_responses.append(execution_result)
+        
+        # Step 3: Aggregate responses into final answer
+        final_answer = self._aggregate_responses(original_query, sub_queries, sub_responses, task_name)
+        
+        # Return final result
         query_output = copy.copy(query)
-        query_output["model_name"] = model_name
-        query_output["response"] = execution_result.get("response", "")
-        query_output["prompt_tokens"] = execution_result.get("prompt_tokens", 0)
-        query_output["completion_tokens"] = execution_result.get("completion_tokens", 0)
-        query_output["success"] = execution_result.get("success", False)
+        query_output["response"] = final_answer
+        query_output["prompt_tokens"] = sum(r.get("prompt_tokens", 0) for r in sub_responses)
+        query_output["completion_tokens"] = sum(r.get("completion_tokens", 0) for r in sub_responses)
+        query_output["success"] = all(r.get("success", False) for r in sub_responses)
         return query_output
 
     def route_batch(self, batch: Optional[Any] = None, task_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Route a batch of queries (sub-queries) using the pre-trained KNN model.
-
-        Each query in the test set is embedded using Longformer, and
-        the trained KNN classifier predicts the most similar model
-        for each query.
+        Route a batch of queries through decomposition and routing (no execution/aggregation).
+        
+        This method performs:
+        1. Decomposes each initial query into sub-queries
+        2. Routes each sub-query using KNN
+        3. Returns only the routed model names (no execution or aggregation)
+        
+        Task-specific prompt formatting is applied if task_name is provided.
 
         Args:
             batch (Any, optional):
@@ -200,18 +227,10 @@ Let's think step by step.
                 A list of query dictionaries, each updated with:
                     - "query": original query text (preserved)
                     - "formatted_query": formatted query if task_name was provided (optional)
-                    - "model_name": predicted model name
-                    - "response": LLM response text
-                    - "prompt_tokens": number of prompt tokens used
-                    - "completion_tokens": number of completion tokens used
-                    - "success": whether the API call succeeded
+                    - "model_name": list of routed model names (one per sub-query)
         """
         # Load KNN model if not already loaded
-        if not hasattr(self, 'knn_model_path'):
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            self.knn_model_path = os.path.join(project_root, self.cfg["model_path"]["load_model_path"])
-        
-        self.knn_model = load_model(self.knn_model_path)
+        self._load_knn_model_if_needed()
 
         # Determine which data to use
         if batch is not None:
@@ -254,55 +273,22 @@ Let's think step by step.
             else:
                 query_text_for_routing = original_query
 
-            # Route the query (using formatted query if available)
-            query_embedding = [get_longformer_embedding(query_text_for_routing).numpy()]
-            model_name = self.knn_model.predict(query_embedding)[0]
+            # Step 1: Decompose query into sub-queries
+            sub_queries = self._decompose_query(query_text_for_routing)
             
-            # Execute the query using the routed model
-            execution_result = self._execute_sub_query(query_text_for_routing, model_name)
-
-            # Update row with routing and execution results
-            row_copy["model_name"] = model_name
-            row_copy["response"] = execution_result.get("response", "")
-            row_copy["prompt_tokens"] = execution_result.get("prompt_tokens", 0)
-            row_copy["completion_tokens"] = execution_result.get("completion_tokens", 0)
-            row_copy["success"] = execution_result.get("success", False)
+            # Step 2: Route each sub-query using KNN (no execution)
+            routed_models = []
+            for sub_query in sub_queries:
+                query_embedding = [get_longformer_embedding(sub_query).numpy()]
+                model_name = self.knn_model.predict(query_embedding)[0]
+                routed_models.append(model_name)
             
+            # Update row with routing results (only model names, no execution)
+            row_copy["model_name"] = routed_models
             query_data_output.append(row_copy)
 
         return query_data_output
 
-    def route_with_context(
-        self, 
-        query: Dict[str, Any], 
-        context: Optional[List[Dict[str, Any]]] = None
-    ) -> Dict[str, Any]:
-        """
-        Route a query with optional context from previous sub-queries.
-        
-        This method allows for context-aware routing where information from
-        previous sub-query responses can influence routing decisions. Currently,
-        this is a placeholder that routes based on query only, but can be extended
-        to incorporate context embeddings.
-
-        Args:
-            query (dict):
-                Current sub-query to route. Must contain "query" key.
-            context (list of dict, optional):
-                List of previous sub-query results, each containing:
-                    - "sub_query": The sub-query text
-                    - "response": The response from the routed model
-                    - "model_name": The model that was used
-                    - "query": Original query (optional)
-
-        Returns:
-            dict:
-                Updated query dictionary with "model_name" prediction.
-        """
-        # For now, route based on query only (same as route_single)
-        # This can be extended to incorporate context embeddings
-        return self.route_single(query)
-    
     def _initialize_local_llm(self):
         """Initialize local LLM for decomposition and aggregation if not already initialized."""
         if not self.use_local_llm or self.local_llm is not None:
@@ -480,61 +466,3 @@ Format:
                 final_answer = ""
         
         return final_answer
-    
-    def answer_query(
-        self, 
-        query: str, 
-        task_name: Optional[str] = None,
-        return_intermediate: bool = False
-    ) -> Union[str, Dict[str, Any]]:
-        """
-        Process a query through the full pipeline: decompose → route → execute → aggregate.
-        
-        This is the main method that handles the entire multi-round process.
-        
-        Args:
-            query: Original query to answer
-            task_name: Optional task name (for prompt selection)
-            return_intermediate: If True, return intermediate results along with final answer
-            
-        Returns:
-            If return_intermediate=False: Final answer string
-            If return_intermediate=True: Dict with:
-                - "final_answer": Final aggregated answer
-                - "sub_queries": List of sub-queries
-                - "routes": List of routed model names
-                - "sub_responses": List of sub-query responses
-                - "metadata": Additional metadata
-        """
-        # Step 1: Decompose query into sub-queries
-        sub_queries = self._decompose_query(query)
-        
-        # Step 2: Route each sub-query using KNN
-        routes = []
-        for sub_query in sub_queries:
-            routing_result = self.route_single({"query": sub_query})
-            routes.append(routing_result["model_name"])
-        
-        # Step 3: Execute each sub-query
-        sub_responses = []
-        for sub_query, model_name in zip(sub_queries, routes):
-            response = self._execute_sub_query(sub_query, model_name)
-            sub_responses.append(response)
-        
-        # Step 4: Aggregate responses into final answer
-        final_answer = self._aggregate_responses(query, sub_queries, sub_responses, task_name)
-        
-        if return_intermediate:
-            return {
-                "final_answer": final_answer,
-                "sub_queries": sub_queries,
-                "routes": routes,
-                "sub_responses": sub_responses,
-                "metadata": {
-                    "num_sub_queries": len(sub_queries),
-                    "task_name": task_name
-                }
-            }
-        else:
-            return final_answer
-
