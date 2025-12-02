@@ -29,11 +29,43 @@ def main():
     router = LLMMultiRoundRouter(args.yaml_path)
     print("✅ LLMMultiRoundRouter initialized successfully!")
 
-    # Run inference - routing only
-    result = router.route_batch()
-    print("Batch routing result:", result)
+    # Run inference - routing and execution
+    print("\n" + "="*60)
+    print("ROUTING + EXECUTION TEST")
+    print("="*60)
+    
+    # Test route_single - now returns response
     result_ = router.route_single({"query": "How are you"})
-    print("Single routing result:", result_)
+    print("Single routing result:")
+    print(f"  Query: {result_.get('query')}")
+    print(f"  Model: {result_.get('model_name')}")
+    print(f"  Response: {result_.get('response', '')[:100]}...")
+    print(f"  Success: {result_.get('success')}")
+    print(f"  Tokens: {result_.get('prompt_tokens')} + {result_.get('completion_tokens')}")
+    
+    # Test route_batch - without task_name (backward compatible)
+    print("\nBatch routing (no task formatting):")
+    result = router.route_batch()
+    if result:
+        print(f"  Processed {len(result)} queries")
+        print(f"  First result model: {result[0].get('model_name')}")
+        print(f"  First result has response: {'response' in result[0]}")
+    
+    # Test route_batch - with task_name (new feature)
+    print("\nBatch routing with task_name='gsm8k':")
+    test_batch = [
+        {"query": "What is 2 + 2?", "task_name": "gsm8k"},
+        {"query": "What is 5 * 3?", "task_name": "gsm8k"}
+    ]
+    result_with_task = router.route_batch(batch=test_batch, task_name="gsm8k")
+    if result_with_task:
+        print(f"  Processed {len(result_with_task)} queries")
+        for i, r in enumerate(result_with_task):
+            print(f"  Query {i+1}:")
+            print(f"    Original: {r.get('query')}")
+            print(f"    Formatted: {r.get('formatted_query', 'N/A')[:50]}...")
+            print(f"    Model: {r.get('model_name')}")
+            print(f"    Success: {r.get('success')}")
     
     # Run full pipeline - decomposition+routing, execution, aggregation
     print("\n" + "="*60)
