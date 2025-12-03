@@ -4,7 +4,7 @@ import torch.nn as nn
 import copy
 from sklearn.neighbors import KNeighborsClassifier
 from llmrouter.models.meta_router import MetaRouter
-from llmrouter.utils import load_model, get_longformer_embedding, call_api, generate_task_query
+from llmrouter.utils import load_model, get_longformer_embedding, call_api, generate_task_query, calculate_task_performance
 
 # Optional imports for local LLM inference
 try:
@@ -170,6 +170,9 @@ Let's think step by step.
                     - "response": final aggregated answer
                     - "prompt_tokens": total prompt tokens used
                     - "completion_tokens": total completion tokens used
+                    - "input_token": total input tokens (alias for prompt_tokens)
+                    - "output_token": total output tokens (alias for completion_tokens)
+                    - "task_performance": evaluation score (0.0-1.0) if ground truth available
                     - "success": whether the pipeline succeeded
         """
         # Load KNN model if not already loaded
@@ -195,11 +198,29 @@ Let's think step by step.
         # Step 3: Aggregate responses into final answer
         final_answer = self._aggregate_responses(original_query, sub_queries, sub_responses, task_name)
         
+        # Calculate token counts
+        prompt_tokens = sum(r.get("prompt_tokens", 0) for r in sub_responses)
+        completion_tokens = sum(r.get("completion_tokens", 0) for r in sub_responses)
+        
+        # Calculate task performance if ground truth is available
+        ground_truth = query.get("ground_truth") or query.get("gt") or query.get("answer")
+        metric = query.get("metric")
+        task_performance = calculate_task_performance(
+            prediction=final_answer,
+            ground_truth=ground_truth,
+            task_name=task_name,
+            metric=metric
+        )
+        
         # Return final result
         query_output = copy.copy(query)
         query_output["response"] = final_answer
-        query_output["prompt_tokens"] = sum(r.get("prompt_tokens", 0) for r in sub_responses)
-        query_output["completion_tokens"] = sum(r.get("completion_tokens", 0) for r in sub_responses)
+        query_output["prompt_tokens"] = prompt_tokens
+        query_output["completion_tokens"] = completion_tokens
+        query_output["input_token"] = prompt_tokens
+        query_output["output_token"] = completion_tokens
+        if task_performance is not None:
+            query_output["task_performance"] = task_performance
         query_output["success"] = all(r.get("success", False) for r in sub_responses)
         return query_output
 
@@ -230,6 +251,9 @@ Let's think step by step.
                     - "response": final aggregated answer
                     - "prompt_tokens": total prompt tokens used
                     - "completion_tokens": total completion tokens used
+                    - "input_token": total input tokens (alias for prompt_tokens)
+                    - "output_token": total output tokens (alias for completion_tokens)
+                    - "task_performance": evaluation score (0.0-1.0) if ground truth available
                     - "success": whether the pipeline succeeded
         """
         # Determine which data to use

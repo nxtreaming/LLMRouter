@@ -178,6 +178,88 @@ def cem_score(prediction: str, ground_truth: str):
         return 0.0
 
 
+def calculate_task_performance(
+    prediction: str, 
+    ground_truth: Optional[str], 
+    task_name: Optional[str] = None,
+    metric: Optional[str] = None
+) -> Optional[float]:
+    """
+    Calculate task performance score for a prediction against ground truth.
+    
+    Args:
+        prediction: The model's response/prediction
+        ground_truth: Ground truth answer (optional)
+        task_name: Task name to determine metric if not provided
+        metric: Evaluation metric to use (optional, will be inferred from task_name if not provided)
+        
+    Returns:
+        Performance score (0.0 to 1.0) or None if ground_truth is not available
+    """
+    if not ground_truth:
+        return None
+    
+    # Determine metric based on task_name if not provided
+    if metric is None and task_name:
+        # Map task names to metrics
+        if task_name in ["natural_qa", "trivia_qa", "squad", "boolq"]:
+            metric = "cem"
+        elif task_name in ["mmlu", "gpqa", "commonsense_qa", "openbook_qa", "arc_challenge"]:
+            metric = "em_mc"
+        elif task_name == "gsm8k":
+            metric = "gsm8k"
+        elif task_name == "math":
+            metric = "math"
+        else:
+            metric = "cem"  # Default to CEM
+    
+    # Evaluate based on metric
+    try:
+        if metric == "em":
+            return float(exact_match_score(prediction, ground_truth))
+        elif metric == "em_mc":
+            return float(exact_match_score(prediction, ground_truth, normal_method="mc"))
+        elif metric == "cem":
+            return float(cem_score(prediction, ground_truth))
+        elif metric == "gsm8k":
+            # GSM8K evaluation: extract number from ground truth and prediction
+            ground_truth_processed = ground_truth.split("####")[-1].replace(',', '').replace('$', '').replace('.', '').strip()
+            answer = re.findall(r"(\-?[0-9\.\,]+)", prediction)
+            if len(answer) == 0:
+                return 0.0
+            invalid_str = ['', '.']
+            final_answer = None
+            for final_answer in reversed(answer):
+                if final_answer not in invalid_str:
+                    break
+            if final_answer is None:
+                return 0.0
+            final_answer = final_answer.replace(',', '').replace('$', '').replace('.', '').strip()
+            return 1.0 if final_answer == ground_truth_processed else 0.0
+        elif metric == "math":
+            # MATH evaluation: extract from \boxed{} format
+            # Simple version - check if ground truth appears in prediction
+            # For full implementation, would need more complex parsing
+            gt_clean = ground_truth.replace("\\boxed{", "").replace("}", "").strip()
+            if gt_clean in prediction:
+                return 1.0
+            # Try to find boxed answer in prediction
+            boxed_match = re.search(r"\\boxed\{([^}]+)\}", prediction)
+            if boxed_match:
+                pred_answer = boxed_match.group(1).strip()
+                if pred_answer == gt_clean:
+                    return 1.0
+            return 0.0
+        elif metric == "f1":
+            f1, _, _ = f1_score(prediction, ground_truth)
+            return float(f1)
+        else:
+            # Default to CEM
+            return float(cem_score(prediction, ground_truth))
+    except Exception as e:
+        print(f"Warning: Error calculating task_performance: {e}")
+        return None
+
 
 def hellaswag_preprocess(text):
     text = text.strip()

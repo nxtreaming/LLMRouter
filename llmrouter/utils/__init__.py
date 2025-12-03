@@ -39,7 +39,7 @@ from .setup import setup_environment
 from .api_calling import call_api
 
 # Import evaluation functions from evaluation.py
-from .evaluation import f1_score, exact_match_score, get_bert_score, evaluate_code, cem_score
+from .evaluation import f1_score, exact_match_score, get_bert_score, evaluate_code, cem_score, calculate_task_performance
 
 __all__ = ["load_csv",
     "load_jsonl",
@@ -57,6 +57,6 @@ __all__ = ["load_csv",
     'process_final_data', 'generate_embeddings_for_data',
     'TASK_DESCRIPTIONS', 'TASK_CATEGORIES', 'API_KEYS', 'HF_TOKEN', 'CASE_NUM',
     'setup_environment',
-    'f1_score', 'exact_match_score', 'get_bert_score', 'evaluate_code', 'cem_score',
+    'f1_score', 'exact_match_score', 'get_bert_score', 'evaluate_code', 'cem_score', 'calculate_task_performance',
     'call_api'
 ]
