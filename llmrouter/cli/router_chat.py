@@ -26,7 +26,7 @@ from llmrouter.models import (
 from llmrouter.models.llmmultiroundrouter import LLMMultiRoundRouter
 from llmrouter.models.knnmultiroundrouter import KNNMultiRoundRouter
 try:
-    from llmrouter.models.router_r1 import RouterR1
+    from llmrouter.models import RouterR1
 except ImportError:
     RouterR1 = None
 from llmrouter.utils import call_api, get_longformer_embedding
@@ -323,16 +323,16 @@ def predict(
             # Get required parameters from config
             cfg = router_instance.cfg
             model_id = cfg.get("model_id", "ulab-ai/Router-R1-Qwen2.5-3B-Instruct")
-            api_base = cfg.get("api_base") or cfg.get("api_endpoint", "https://integrate.api.nvidia.com/v1")
-            api_key = cfg.get("api_key") or os.environ.get("API_KEYS", "").split(",")[0] if os.environ.get("API_KEYS") else ""
+            api_base = cfg.get("api_base", None)
+            api_key = cfg.get("api_key", None)
             
-            if not api_key:
-                return "Error: RouterR1 requires api_key in config or API_KEYS environment variable"
+            if not api_key or not api_base:
+                return "Error: RouterR1 requires api_key and api_base in yaml config"
             
             # RouterR1's route_single returns None (prints output), so we need to handle it differently
             # For now, indicate that RouterR1 needs special implementation
-            return f"Error: RouterR1 requires special handling. Please use RouterR1's native interface. " \
-                   f"Required: model_id={model_id}, api_base={api_base}"
+            result = router_instance.route_single({"query": query_for_router})
+            return result
             
         except Exception as e:
             return f"Error with RouterR1: {str(e)}"

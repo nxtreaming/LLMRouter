@@ -19,22 +19,24 @@ class RouterR1(MetaRouter):
 
     This class:
         - Inherits MetaRouter to reuse configuration and utilities
-        - Implements the `route()` method using the underlying `model`
+        - Implements the `route_single()` method using the pre-trained model from official HF repo
     """
 
-    def __init__(self, model: nn.Module, yaml_path: str | None = None, resources=None):
+    def __init__(self, yaml_path: str):
         """
         Args:
-            model (nn.Module):
-                Underlying LLM  (e.g., qwen, llama, etc).
-            yaml_path (str | None):
-                Optional path to YAML config for this router.
-            resources (Any, optional):
-                Additional shared resources, if needed.
+            yaml_path (str):
+                Path to YAML config for this router.
         """
-        super().__init__(model=model, yaml_path=yaml_path, resources=resources)
+        dummy_model = nn.Identity()
+        super().__init__(model=dummy_model, yaml_path=yaml_path)
 
-    def route_single(self, query: Dict[str, Any], model_id: str, api_base: str, api_key: str):
+        # Initialize hyperparameters
+        self.model_id = self.cfg["hparam"]["model_id"]
+        self.api_base = self.cfg["hparam"]["api_base"]
+        self.api_key = self.cfg["hparam"]["api_key"]
+
+    def route_single(self, query: Dict[str, Any]):
         """
         Perform inference on Router-R1.
         """
@@ -44,13 +46,13 @@ class RouterR1(MetaRouter):
             question += '?'
 
         # Model path and tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-        llm = LLM(model=model_id, dtype="float16", tensor_parallel_size=torch.cuda.device_count())
+        tokenizer = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=True)
+        llm = LLM(model=self.model_id, dtype="float16", tensor_parallel_size=torch.cuda.device_count())
 
         curr_route_template = '\n{output_text}\n<information>{route_results}</information>\n'
 
         # Initial prompt
-        if model_id.lower().find("qwen") != -1:
+        if self.model_id.lower().find("qwen") != -1:
             prompt = PROMPT_TEMPLATE_QWEN.format_map({"question": question})
         else:
             prompt = PROMPT_TEMPLATE_LLAMA.format_map({"question": question})
@@ -85,7 +87,7 @@ class RouterR1(MetaRouter):
 
             tmp_query = self.get_query(output_text)
             if tmp_query:
-                route_results = self.route(tmp_query, api_base=api_base, api_key=api_key)
+                route_results = self.route(tmp_query, api_base=self.api_base, api_key=self.api_key)
             else:
                 route_results = ''
 
