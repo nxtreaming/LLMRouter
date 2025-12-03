@@ -1,5 +1,5 @@
-from .knnmultiroundrouter import KNNMultiRoundRouter
-from .knnmultiroundtrainer import KNNMultiRoundRouterTrainer
+from .router import KNNMultiRoundRouter
+from .trainer import KNNMultiRoundRouterTrainer
 
 __all__ = ["KNNMultiRoundRouter", "KNNMultiRoundRouterTrainer"]
 

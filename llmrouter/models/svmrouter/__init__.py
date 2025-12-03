@@ -1,4 +1,4 @@
-from .svmrouter import SVMRouter
-from .svmtrainer import SVMRouterTrainer
+from .router import SVMRouter
+from .trainer import SVMRouterTrainer
 
 __all__ = ["SVMRouter", "SVMRouterTrainer"]

@@ -1,4 +1,4 @@
-from .automixrouter import AutomixRouter
-from .automixtrainer import AutomixRouterTrainer
+from .router import AutomixRouter
+from .trainer import AutomixRouterTrainer
 
 __all__ = ["AutomixRouter", "AutomixRouterTrainer"]

@@ -1,4 +1,4 @@
-from .hybrid_llmrouter import HybridLLMRouter
-from .hybrid_llmtrainer import HybridLLMTrainer
+from .router import HybridLLMRouter
+from .trainer import HybridLLMTrainer
 
 __all__ = ["HybridLLMRouter", "HybridLLMTrainer"]

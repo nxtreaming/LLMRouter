@@ -1,4 +1,4 @@
-from .mlprouter import MLPRouter
-from .mlptrainer import MLPTrainer
+from .router import MLPRouter
+from .trainer import MLPTrainer
 
 __all__ = ["MLPRouter", "MLPTrainer"]

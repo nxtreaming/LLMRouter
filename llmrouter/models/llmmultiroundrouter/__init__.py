@@ -1,3 +1,3 @@
-from .llmmultiroundrouter import LLMMultiRoundRouter
+from .router import LLMMultiRoundRouter
 
 __all__ = ["LLMMultiRoundRouter"]

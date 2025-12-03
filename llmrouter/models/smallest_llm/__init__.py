@@ -1,3 +1,3 @@
-from .smallest_llm import SmallestLLM
+from .router import SmallestLLM
 
 __all__ = ["SmallestLLM"]

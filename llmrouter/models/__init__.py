@@ -22,11 +22,17 @@ from .elorouter import EloRouterTrainer
 from .automix import AutomixRouter
 from .automix import AutomixRouterTrainer
 
-from .dcrouter import DCRouter
-from .dcrouter import DCTrainer
+from .routerdc import DCRouter
+from .routerdc import DCTrainer
 
 from .hybrid_llm import HybridLLMRouter
 from .hybrid_llm import HybridLLMTrainer
+
+from .graphrouter import GraphRouter
+from .graphrouter import GraphTrainer
+
+from .causallm_router import CausalLMRouter
+from .causallm_router import CausalLMTrainer
 
 from .router_r1 import RouterR1
 
@@ -59,6 +65,12 @@ __all__ = [
 
     "HybridLLMRouter",
     "HybridLLMTrainer",
+
+    "GraphRouter",
+    "GraphTrainer",
+
+    "CausalLMRouter",
+    "CausalLMTrainer",
 
     "RouterR1",
 ]

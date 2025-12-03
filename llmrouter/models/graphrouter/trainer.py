@@ -1,64 +1,87 @@
-# models/graphrouter/trainer.py
-
 import torch
+import os
 from llmrouter.models.base_trainer import BaseTrainer
 
-# 2. Wrap model into a router
-router = GraphRouter(model=model, yaml_path="configs/graph_router.yaml")
 
-# 3. Instantiate trainer with this router
-trainer = GraphRouterTrainer(router=router, device="cuda")
-
-# 4. Train using any PyTorch-style dataloader
-trainer.train(train_dataloader)
-
-
-class GraphRouterTrainer(BaseTrainer):
+class GraphTrainer(BaseTrainer):
     """
-    GraphRouterTrainer
-    ------------------
-    Example trainer implementation for GraphRouter.
+    GraphTrainer: A trainer class for GraphRouter using GNN.
 
-    Uses a simple supervised learning objective with cross-entropy loss.
+    Training workflow:
+    1. Get training data and model from router
+    2. Split validation set from training set
+    3. Train GNN model
+    4. Save best model
     """
 
-    def loss_func(self, outputs, batch) -> torch.Tensor:
+    def __init__(self, router, optimizer=None, device=None):
         """
-        Compute cross-entropy loss between predicted logits and labels.
+        Initialize GraphTrainer.
 
         Args:
-            outputs (dict):
-                Dictionary containing "logits" from the router.
-            batch (dict):
-                Dictionary containing ground truth labels under key "labels".
-
-        Returns:
-            torch.Tensor:
-                Scalar loss used for optimization.
+            router: GraphRouter instance
+            optimizer: Optional optimizer (if None, use AdamW from GNNPredictor)
+            device: Device to use ('cuda' or 'cpu')
         """
-        logits = outputs["logits"]
-        labels = batch["labels"]
-        loss = torch.nn.functional.cross_entropy(logits, labels)
-        return loss
+        super().__init__(router=router, optimizer=optimizer, device=device)
 
-    def train(self, dataloader):
+        self.router = router
+        self.device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Get model paths
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        model_path_config = router.cfg.get("model_path", {})
+
+        self.ini_model_path = os.path.join(
+            project_root,
+            model_path_config.get("ini_model_path", "models/gnn_model_init.pt")
+        )
+        self.save_model_path = os.path.join(
+            project_root,
+            model_path_config.get("save_model_path", "models/gnn_model.pt")
+        )
+
+        # Get GNN predictor
+        self.gnn_predictor = router.gnn_predictor
+
+        # Replace optimizer if provided
+        if optimizer is not None:
+            self.gnn_predictor.optimizer = optimizer
+
+    def train(self):
         """
-        Train the GraphRouter for one or multiple epochs.
+        Train the GNN model.
 
-        Args:
-            dataloader:
-                Iterable of batches for training.
+        Steps:
+        1. Load initial model if exists
+        2. Build training and validation data
+        3. Train model
+        4. Save best model
         """
-        self.router.train()
-        for step, batch in enumerate(dataloader):
-            batch = self._move_batch_to_device(batch)
+        # Load initial model if exists
+        if os.path.exists(self.ini_model_path) and self.ini_model_path.endswith(".pt"):
+            state_dict = torch.load(self.ini_model_path, map_location='cpu')
+            self.gnn_predictor.model.load_state_dict(state_dict)
 
-            outputs = self.router(batch)
-            loss = self.loss_func(outputs, batch)
+        # Get training and validation data
+        train_data, val_data = self.router.get_training_data()
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+        # Ensure save directory exists
+        save_dir = os.path.dirname(self.save_model_path)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
-            if step % 10 == 0:
-                print(f"[GraphRouterTrainer] Step {step} | loss = {loss.item():.4f}")
+        # Update model save path in config
+        self.gnn_predictor.config['model_path'] = self.save_model_path
+
+        # Train model
+        best_result = self.gnn_predictor.train_validate(
+            data=train_data,
+            data_validate=val_data
+        )
+
+        return best_result
+
+
+
+
