@@ -139,8 +139,5 @@ python -m llmrouter.cli.router_chat --router knnrouter --config config.yaml
 ```
 
 
-<p align="center">
-    <a href="https://star-history.com/#ulab-uiuc/LLMRouter&Date">
-        <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ulab-uiuc/LLMRouter&type=Date" />
-    </a>
-</p>
+
+ [![Star History Chart](https://api.star-history.com/svg?repos=ulab-uiuc/LLMRouter&type=Date&from=2025-10-29)](https://star-history.com/#ulab-uiuc/LLMRouter&Date&from=2025-10-29)
