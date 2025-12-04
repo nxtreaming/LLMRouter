@@ -22,6 +22,35 @@
 3. 🔄 *Multi-Round Routing*: Specialized routers for handling complex multi-turn conversations with context awareness.
 4. 🛠️ *Unified CLI*: Complete command-line interface for training, inference, and interactive chat with Gradio-based UI.
 
+## Supported Routers
+
+### Single-Round Routers
+| Router | Training | Inference | Description |
+|--------|:--------:|:---------:|-------------|
+| `knnrouter` | ✅ | ✅ | K-Nearest Neighbors based routing |
+| `svmrouter` | ✅ | ✅ | Support Vector Machine based routing |
+| `mlprouter` | ✅ | ✅ | Multi-Layer Perceptron based routing |
+| `mfrouter` | ✅ | ✅ | Matrix Factorization based routing |
+| `elorouter` | ✅ | ✅ | Elo Rating based routing |
+| `dcrouter` | ✅ | ✅ | Divide-and-Conquer routing |
+| `automix` | ✅ | ✅ | Automatic model mixing |
+| `hybrid_llm` | ✅ | ✅ | Hybrid LLM routing strategy |
+| `graphrouter` | ✅ | ❌ | Graph-based routing |
+| `causallm_router` | ✅ | ✅ | Causal Language Model router |
+| `smallest_llm` | ❌ | ✅ | Always routes to smallest model (baseline) |
+| `largest_llm` | ❌ | ✅ | Always routes to largest model (baseline) |
+
+### Multi-Round Routers
+| Router | Training | Inference | Description |
+|--------|:--------:|:---------:|-------------|
+| `router_r1` | ❌ | ✅ | Pre-trained Router-R1 model for multi-turn conversations |
+
+### Agentic Routers
+| Router | Training | Inference | Description |
+|--------|:--------:|:---------:|-------------|
+| `knnmultiroundrouter` | ✅ | ✅ | KNN-based agentic router for complex tasks |
+| `llmmultiroundrouter` | ❌ | ✅ | LLM-based agentic router for complex tasks |
+
 ## Get Started
 
 ### Install from pip
@@ -107,39 +136,6 @@ python -m llmrouter.cli.router_inference --router knnrouter --config config.yaml
 # Chat
 python -m llmrouter.cli.router_chat --router knnrouter --config config.yaml
 ```
-
-## Supported Routers
-
-### Standard Routers
-| Router | Training | Inference | Description |
-|--------|:--------:|:---------:|-------------|
-| `knnrouter` | ✅ | ✅ | K-Nearest Neighbors based routing |
-| `svmrouter` | ✅ | ✅ | Support Vector Machine based routing |
-| `mlprouter` | ✅ | ✅ | Multi-Layer Perceptron based routing |
-| `mfrouter` | ✅ | ✅ | Matrix Factorization based routing |
-| `elorouter` | ✅ | ✅ | Elo Rating based routing |
-| `dcrouter` | ✅ | ✅ | Divide-and-Conquer routing |
-
-### Advanced Routers
-| Router | Training | Inference | Description |
-|--------|:--------:|:---------:|-------------|
-| `automix` | ✅ | ✅ | Automatic model mixing |
-| `hybrid_llm` | ✅ | ✅ | Hybrid LLM routing strategy |
-| `graphrouter` | ✅ | ❌ | Graph-based routing |
-| `causallm_router` | ✅ | ✅ | Causal Language Model router |
-| `router_r1` | ❌ | ✅ | Pre-trained Router-R1 model |
-
-### Multi-Round Routers
-| Router | Training | Inference | Description |
-|--------|:--------:|:---------:|-------------|
-| `knnmultiroundrouter` | ✅ | ✅ | KNN router for multi-turn conversations |
-| `llmmultiroundrouter` | ❌ | ✅ | LLM-based multi-turn router |
-
-### Baseline Routers
-| Router | Training | Inference | Description |
-|--------|:--------:|:---------:|-------------|
-| `smallest_llm` | ❌ | ✅ | Always routes to smallest model |
-| `largest_llm` | ❌ | ✅ | Always routes to largest model |
 
 
 <p align="center">
