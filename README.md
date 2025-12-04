@@ -31,14 +31,14 @@
 | `svmrouter` | ✅ | ✅ | Support Vector Machine based routing |
 | `mlprouter` | ✅ | ✅ | Multi-Layer Perceptron based routing |
 | `mfrouter` | ✅ | ✅ | Matrix Factorization based routing |
-| `elorouter` | ✅ | ✅ | Elo Rating based routing |
+| `elorouter` | ❌ | ✅ | Elo Rating based routing |
 | `dcrouter` | ✅ | ✅ | Divide-and-Conquer routing |
-| `automix` | ✅ | ✅ | Automatic model mixing |
+| `automix` | ❌ | ✅ | Automatic model mixing |
 | `hybrid_llm` | ✅ | ✅ | Hybrid LLM routing strategy |
-| `graphrouter` | ✅ | ❌ | Graph-based routing |
+| `graphrouter` | ✅ | ✅ | Graph-based routing |
 | `causallm_router` | ✅ | ✅ | Causal Language Model router |
-| `smallest_llm` | ❌ | ✅ | Always routes to smallest model (baseline) |
-| `largest_llm` | ❌ | ✅ | Always routes to largest model (baseline) |
+| `smallest_llm` | ❌ | ✅ | Always routes to smallest model |
+| `largest_llm` | ❌ | ✅ | Always routes to largest model|
 
 ### Multi-Round Routers
 | Router | Training | Inference | Description |
