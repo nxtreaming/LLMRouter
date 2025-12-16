@@ -65,18 +65,19 @@ class DCRouter(MetaRouter):
 
         # Load datasets
         print(f"[DCRouter] Loading datasets...")
+        hparam = self.cfg['hparam']
         self.train_dataset = DCDataset(
-            data_path=self.train_data_processed,
-            source_max_token_len=self.cfg.get('data_preprocessing', {}).get('source_max_token_len', 512),
-            target_max_token_len=self.cfg.get('data_preprocessing', {}).get('target_max_token_len', 512),
+            data=self.train_data_processed,
+            source_max_token_len=hparam.get('source_max_token_len', 512),
+            target_max_token_len=hparam.get('target_max_token_len', 512),
             dataset_id=0
         )
         self.train_dataset.register_tokenizer(self.tokenizer)
 
         self.test_dataset = DCDataset(
-            data_path=self.test_data_processed,
-            source_max_token_len=self.cfg.get('data_preprocessing', {}).get('source_max_token_len', 512),
-            target_max_token_len=self.cfg.get('data_preprocessing', {}).get('target_max_token_len', 512),
+            data=self.test_data_processed,
+            source_max_token_len=hparam.get('source_max_token_len', 512),
+            target_max_token_len=hparam.get('target_max_token_len', 512),
             dataset_id=1
         )
         self.test_dataset.register_tokenizer(self.tokenizer)
@@ -89,61 +90,59 @@ class DCRouter(MetaRouter):
         print(f"  LLM names: {self.train_dataset.router_node}")
 
         # Create RouterModule
-        model_config = self.cfg['model']
         model = RouterModule(
             backbone=encoder_model,
-            hidden_state_dim=model_config['hidden_state_dim'],
+            hidden_state_dim=hparam['hidden_state_dim'],
             node_size=num_llms,
-            similarity_function=model_config['similarity_function']
+            similarity_function=hparam['similarity_function']
         )
         print("[DCRouter] RouterModule created successfully!")
 
-        # Initialize parent class
-        super().__init__(model=model, yaml_path=yaml_path)
+        # Save cfg before calling super().__init__() since it will be reset
+        saved_cfg = self.cfg
+        
+        # Initialize parent class (pass None to avoid duplicate data loading)
+        # DCRouter handles its own data loading, so we pass yaml_path=None
+        super().__init__(model=model, yaml_path=None)
+        
+        # Restore cfg since MetaRouter.__init__ resets it to {}
+        self.cfg = saved_cfg
+        
+        # Load metric weights if provided
+        weights_dict = self.cfg.get("metric", {}).get("weights", {})
+        self.metric_weights = list(weights_dict.values())
 
     def _prepare_data(self):
-        """Prepare and preprocess data if needed."""
+        """Prepare and preprocess data."""
         data_path_config = self.cfg['data_path']
         train_data_raw = os.path.join(self.project_root, data_path_config['routing_data_train'])
         test_data_raw = os.path.join(self.project_root, data_path_config['routing_data_test'])
 
-        # Preprocessed data paths
-        preprocessed_dir = os.path.join(
-            self.project_root,
-            data_path_config.get('preprocessed_dir', 'data/dcrouter_preprocessed')
+        print("\n[DCRouter] Starting data preprocessing...")
+
+        hparam = self.cfg['hparam']
+        n_clusters = hparam.get('n_clusters', 3)
+        max_test_samples = hparam.get('max_test_samples', 500)
+
+        # Preprocess training data
+        # print("\n[DCRouter] Preprocessing training data...")
+        self.train_data_processed = preprocess_data(
+            input_path=train_data_raw,
+            add_cluster_id=True,
+            n_clusters=n_clusters,
+            max_samples=None
         )
-        self.train_data_processed = os.path.join(preprocessed_dir, "train.json")
-        self.test_data_processed = os.path.join(preprocessed_dir, "test.json")
 
-        # Check if preprocessing is needed
-        if not os.path.exists(self.train_data_processed) or not os.path.exists(self.test_data_processed):
-            print("\n[DCRouter] Preprocessed data not found. Starting data preprocessing...")
+        # Preprocess test data
+        # print("\n[DCRouter] Preprocessing test data...")
+        self.test_data_processed = preprocess_data(
+            input_path=test_data_raw,
+            add_cluster_id=False,
+            n_clusters=n_clusters,
+            max_samples=max_test_samples
+        )
 
-            preprocess_config = self.cfg.get('data_preprocessing', {})
-            n_clusters = preprocess_config.get('n_clusters', 3)
-            max_test_samples = preprocess_config.get('max_test_samples', 500)
-
-            # Preprocess training data
-            print("\n[DCRouter] Preprocessing training data...")
-            preprocess_data(
-                input_path=train_data_raw,
-                output_path=self.train_data_processed,
-                add_cluster_id=True,
-                n_clusters=n_clusters,
-                max_samples=None
-            )
-
-            # Preprocess test data
-            print("\n[DCRouter] Preprocessing test data...")
-            preprocess_data(
-                input_path=test_data_raw,
-                output_path=self.test_data_processed,
-                add_cluster_id=False,
-                n_clusters=n_clusters,
-                max_samples=max_test_samples
-            )
-
-            print("[DCRouter] Data preprocessing completed!\n")
+        print("[DCRouter] Data preprocessing completed!\n")
 
     def route(self, batch):
         """
@@ -176,6 +175,20 @@ class DCRouter(MetaRouter):
             "predictions": predictions,
         }
 
+    def forward(self, batch):
+        """
+        PyTorch-compatible forward method.
+        
+        This delegates to route() for compatibility with nn.Module.
+        
+        Args:
+            batch (dict): A batch containing tokenized inputs
+            
+        Returns:
+            dict: A dictionary with routing outputs
+        """
+        return self.route(batch)
+
     def route_batch(self):
         """
         Route a batch of data from the test dataset.
@@ -186,14 +199,14 @@ class DCRouter(MetaRouter):
         from torch.utils.data import DataLoader
 
         # Load model if exists
-        inference_config = self.cfg.get('inference', {})
-        device = inference_config.get('device', 'cpu')
+        hparam = self.cfg['hparam']
+        device = hparam.get('device', 'cpu')
 
         # Try to load checkpoint
-        save_dir = os.path.join(self.project_root, os.path.dirname(self.cfg['model_path']['load_model_path']))
+        save_dir = os.path.join(self.project_root, os.path.dirname(self.cfg['model_path']['save_model_path']))
         checkpoint_path = os.path.join(save_dir, 'best_model.pth')
         if not os.path.exists(checkpoint_path):
-            checkpoint_path = os.path.join(save_dir, 'dcrouter_model.pth')
+            checkpoint_path = os.path.join(save_dir, 'best_training_model.pth')
 
         if os.path.exists(checkpoint_path):
             print(f"[DCRouter] Loading checkpoint from: {checkpoint_path}")
@@ -208,7 +221,7 @@ class DCRouter(MetaRouter):
         # Run inference
         test_dataloader = DataLoader(
             self.test_dataset,
-            batch_size=inference_config.get('batch_size', 64),
+            batch_size=hparam.get('inference_batch_size', 64),
             shuffle=False
         )
 
@@ -224,7 +237,7 @@ class DCRouter(MetaRouter):
                 batch = {
                     "input_ids": inputs["input_ids"],
                     "attention_mask": inputs["attention_mask"],
-                    "temperature": inference_config.get('temperature', 1.0),
+                    "temperature": hparam.get('inference_temperature', 1.0),
                 }
 
                 outputs = self.route(batch)
@@ -254,14 +267,14 @@ class DCRouter(MetaRouter):
         Returns:
             dict: Routing result
         """
-        inference_config = self.cfg.get('inference', {})
-        device = inference_config.get('device', 'cpu')
+        hparam = self.cfg['hparam']
+        device = hparam.get('device', 'cpu')
 
         # Load model if exists
-        save_dir = os.path.join(self.project_root, os.path.dirname(self.cfg['model_path']['load_model_path']))
+        save_dir = os.path.join(self.project_root, os.path.dirname(self.cfg['model_path']['save_model_path']))
         checkpoint_path = os.path.join(save_dir, 'best_model.pth')
         if not os.path.exists(checkpoint_path):
-            checkpoint_path = os.path.join(save_dir, 'dcrouter_model.pth')
+            checkpoint_path = os.path.join(save_dir, 'best_training_model.pth')
 
         if os.path.exists(checkpoint_path):
             state_dict = torch.load(checkpoint_path, map_location=device)
@@ -285,7 +298,7 @@ class DCRouter(MetaRouter):
         batch = {
             "input_ids": query_tokens["input_ids"],
             "attention_mask": query_tokens["attention_mask"],
-            "temperature": inference_config.get('temperature', 1.0),
+            "temperature": hparam.get('inference_temperature', 1.0),
         }
 
         with torch.no_grad():

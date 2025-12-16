@@ -37,7 +37,8 @@ class DCDataset(Dataset):
 
     def __init__(
         self,
-        data_path: str,
+        data_path: str = None,
+        data: list = None,
         source_max_token_len: int = 512,
         target_max_token_len: int = 512,
         size: int | None = None,
@@ -48,8 +49,10 @@ class DCDataset(Dataset):
         Initialize DCDataset.
 
         Args:
-            data_path (str):
+            data_path (str, optional):
                 Path to JSON file containing training/test data.
+            data (list, optional):
+                Pre-loaded data list. If provided, data_path will be ignored.
             source_max_token_len (int):
                 Maximum length for source tokens (default: 512).
             target_max_token_len (int):
@@ -63,16 +66,21 @@ class DCDataset(Dataset):
                 ID for this dataset, used for task-level contrastive learning
                 (default: 0).
         """
-        # Load data from JSON file
-        with open(data_path, 'r') as f:
-            if data_path.endswith('.json'):
-                self.data = json.load(f)
-            elif data_path.endswith('.jsonl'):
-                # Load JSONL format
-                self.data = [json.loads(line.strip()) for line in f if line.strip()]
-            else:
-                # Default to JSON
-                self.data = json.load(f)
+        # Load data from pre-loaded data or from file
+        if data is not None:
+            self.data = data
+        elif data_path is not None:
+            with open(data_path, 'r') as f:
+                if data_path.endswith('.json'):
+                    self.data = json.load(f)
+                elif data_path.endswith('.jsonl'):
+                    # Load JSONL format
+                    self.data = [json.loads(line.strip()) for line in f if line.strip()]
+                else:
+                    # Default to JSON
+                    self.data = json.load(f)
+        else:
+            raise ValueError("Either data_path or data must be provided")
 
         # Repeat data if size is specified and larger than current dataset
         if size:

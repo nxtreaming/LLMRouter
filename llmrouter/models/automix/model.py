@@ -138,7 +138,12 @@ class AutomixModel(nn.Module):
         slm_cost, llm_cost = costs
 
         slm_perf, llm_perf = data[self.slm_column].mean(), data[self.llm_column].mean()
-        slm_llm_slope = (llm_perf - slm_perf) / (llm_cost - slm_cost)
+        # Avoid division by zero
+        if abs(llm_cost - slm_cost) < 1e-10:
+            # If costs are equal, slope is undefined
+            slm_llm_slope = 0.0
+        else:
+            slm_llm_slope = (llm_perf - slm_perf) / (llm_cost - slm_cost)
         return slm_llm_slope, slm_perf, llm_perf
 
     def train_routing(
@@ -183,11 +188,67 @@ class AutomixModel(nn.Module):
             )
 
             # Slope between automix and slm
-            automix_slm_slope = (avg_performance - slm_perf) / (avg_cost - slm_cost)
-            ibc_lift = (automix_slm_slope - slm_llm_slope) / slm_llm_slope
+            if abs(avg_cost - slm_cost) < 1e-10:
+                automix_slm_slope = 0.0
+            else:
+                automix_slm_slope = (avg_performance - slm_perf) / (avg_cost - slm_cost)
+            
+            # Avoid division by zero when calculating ibc_lift
+            if abs(slm_llm_slope) < 1e-10:
+                # If slope is zero or very small, ibc_lift is undefined
+                # Use a fallback: compare automix_slm_slope directly
+                if automix_slm_slope > 0:
+                    ibc_lift = float('inf')  # Positive improvement
+                elif automix_slm_slope < 0:
+                    ibc_lift = float('-inf')  # Negative improvement
+                else:
+                    ibc_lift = 0.0
+            else:
+                ibc_lift = (automix_slm_slope - slm_llm_slope) / slm_llm_slope
+            
             thresh_dic[str(param)] = ibc_lift
 
-        self.best_param = eval(max(thresh_dic, key=thresh_dic.get))
+        if not thresh_dic:
+            # No valid parameters found
+            if self.verbose:
+                print("WARNING: No valid parameters found during training!")
+            self.best_param = None
+            return None
+        
+        # Handle case where all ibc_lift values are NaN or invalid
+        valid_scores = {}
+        for k, v in thresh_dic.items():
+            if isinstance(v, float):
+                if pd.isna(v) or v == float('-inf'):
+                    continue
+            valid_scores[k] = v
+        
+        if not valid_scores:
+            # All scores are invalid, use first parameter as fallback
+            if self.verbose:
+                print("WARNING: All IBC lift scores are invalid. Using first parameter as fallback.")
+            self.best_param = eval(list(thresh_dic.keys())[0])
+        else:
+            # Find best parameter, handling inf and -inf
+            def safe_max_key(d):
+                """Find key with maximum value, handling inf/-inf."""
+                max_val = float('-inf')
+                max_key = None
+                has_inf = False
+                for k, v in d.items():
+                    if isinstance(v, float):
+                        if v == float('inf'):
+                            has_inf = True
+                            max_key = k  # Prefer inf over finite values
+                            break
+                    if v > max_val:
+                        max_val = v
+                        max_key = k
+                return max_key if max_key is not None else list(d.keys())[0]
+            
+            best_key = safe_max_key(valid_scores) if valid_scores else list(thresh_dic.keys())[0]
+            self.best_param = eval(best_key)
+        
         if self.verbose:
             print("Best Param:", self.best_param, thresh_dic[str(self.best_param)])
 
@@ -291,8 +352,24 @@ class AutomixModel(nn.Module):
         )
         avg_performance, avg_cost = self.compute_performance_cost(data, to_retry)
         slm_llm_slope, slm_perf, llm_perf = self.get_slm_llm_slope_perf(data)
-        automix_slm_slope = (avg_performance - slm_perf) / (avg_cost - slm_cost)
-        ibc_lift = (automix_slm_slope - slm_llm_slope) / slm_llm_slope
+        
+        # Avoid division by zero
+        if abs(avg_cost - slm_cost) < 1e-10:
+            automix_slm_slope = 0.0
+        else:
+            automix_slm_slope = (avg_performance - slm_perf) / (avg_cost - slm_cost)
+        
+        # Avoid division by zero when calculating ibc_lift
+        if abs(slm_llm_slope) < 1e-10:
+            # If slope is zero or very small, ibc_lift is undefined
+            if automix_slm_slope > 0:
+                ibc_lift = float('inf')
+            elif automix_slm_slope < 0:
+                ibc_lift = float('-inf')
+            else:
+                ibc_lift = 0.0
+        else:
+            ibc_lift = (automix_slm_slope - slm_llm_slope) / slm_llm_slope
 
         if return_dict:
             result = {

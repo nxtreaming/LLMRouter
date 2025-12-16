@@ -1,5 +1,6 @@
 """
 Automix Data Pipeline
+
 ---------------------
 This module contains data preparation functions for the Automix router.
 
@@ -14,6 +15,7 @@ Adapted for LLMRouter framework.
 import os
 import re
 import string
+import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -51,6 +53,20 @@ def _env_or(default_value: str, *env_keys: str) -> str:
 _openai_client = None
 
 
+def get_client(base_url="", api_key="", max_retries=2, timeout=60):
+    """Get or create OpenAI client with caching (like api_test.py)."""
+    global _openai_client
+    if _openai_client is None:
+        from openai import OpenAI
+        _openai_client = OpenAI(
+            base_url=base_url,
+            api_key=api_key,
+            max_retries=max_retries,
+            timeout=timeout
+        )
+    return _openai_client
+
+
 def init_providers() -> None:
     """
     Initialize API providers (HuggingFace, OpenAI, etc.).
@@ -60,7 +76,6 @@ def init_providers() -> None:
     global _openai_client
     try:
         from huggingface_hub import login
-        from openai import OpenAI
 
         os.environ.pop("HF_ENDPOINT", None)
         hf_token = _env_or(
@@ -70,7 +85,7 @@ def init_providers() -> None:
 
         api_key = _env_or(
             (
-                "your_api_key"
+                "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"
             ),
             "OPENAI_API_KEY",
             "NVIDIA_API_KEY",
@@ -82,8 +97,13 @@ def init_providers() -> None:
             "NVIDIA_API_BASE",
         )
 
-        # Initialize OpenAI client with new API (>=1.0.0)
-        _openai_client = OpenAI(api_key=api_key, base_url=api_base)
+        # Initialize OpenAI client with timeout and retry (like api_test.py)
+        _openai_client = get_client(
+            base_url=api_base,
+            api_key=api_key,
+            max_retries=2,
+            timeout=60
+        )
     except ImportError:
         print("Warning: Some API providers could not be initialized")
 
@@ -199,6 +219,76 @@ Evaluation:"""
 # API Call Functions
 # ============================================================================
 
+def get_llm_response_via_api(
+    prompt,
+    LLM_MODEL="",
+    base_url="",
+    api_key="",
+    TAU=1.0,
+    TOP_P=1.0,
+    SEED=42,
+    MAX_TRIALS=3,
+    TIME_GAP=2.0,
+    max_tokens=2048,
+    stop=None,
+):
+    """
+    Get LLM response via API with retry mechanism (like api_test.py).
+    
+    Args:
+        prompt: Input prompt
+        LLM_MODEL: Model name
+        base_url: API base URL
+        api_key: API key
+        TAU: Temperature
+        TOP_P: Top-p sampling
+        SEED: Random seed
+        MAX_TRIALS: Maximum retry attempts
+        TIME_GAP: Time to wait between retries
+        max_tokens: Maximum tokens to generate
+        stop: Stop sequence
+    
+    Returns:
+        Response content (str or list) and completion_tokens, or (None, 0) on failure
+    """
+    client = get_client(base_url=base_url, api_key=api_key)
+    completion = None
+    trials = MAX_TRIALS
+    
+    while trials > 0:
+        trials -= 1
+        try:
+            completion = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=TAU,
+                top_p=TOP_P,
+                seed=SEED,
+                max_tokens=max_tokens,
+                stop=stop if stop else None,
+            )
+            break
+        except Exception as e:
+            print(e)
+            if "request timed out" in str(e).strip().lower():
+                break
+            if trials > 0:
+                print("Retrying...")
+                time.sleep(TIME_GAP)
+    
+    if completion is None:
+        return None, 0
+    
+    contents = completion.choices
+    meta_info = completion.usage
+    completion_tokens = meta_info.completion_tokens if meta_info else 0
+    
+    if len(contents) == 1:
+        return contents[0].message.content, completion_tokens
+    else:
+        return [c.message.content for c in contents], completion_tokens
+
+
 def call_openai_api(
     prompt: str,
     engine_name: str,
@@ -210,6 +300,7 @@ def call_openai_api(
 ):
     """
     Call OpenAI API to get model predictions.
+    Now uses get_llm_response_via_api internally for retry mechanism.
 
     Args:
         prompt: Input prompt
@@ -232,29 +323,50 @@ def call_openai_api(
         print("Error: OpenAI client not initialized")
         return None
 
+    # Get API credentials from global client
+    api_key = _env_or(
+        "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",
+        "OPENAI_API_KEY",
+        "NVIDIA_API_KEY",
+        "NVAPI_KEY",
+    )
+    api_base = _env_or(
+        "https://integrate.api.nvidia.com/v1",
+        "OPENAI_API_BASE",
+        "NVIDIA_API_BASE",
+    )
+
+    # Use get_llm_response_via_api for retry mechanism
+    # Handle n > 1 by calling multiple times (like original implementation)
     all_responses = []
     orig_n = n
-
-    try:
-        while n > 0:
-            current_batch_size = min(n, batch_size)
-            # Use new OpenAI API (>=1.0.0)
-            response = _openai_client.chat.completions.create(
-                model=engine_name,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=temperature,
-                n=current_batch_size,
+    
+    while n > 0:
+        current_batch_size = min(n, batch_size)
+        # Call get_llm_response_via_api for each batch
+        for _ in range(current_batch_size):
+            response, _ = get_llm_response_via_api(
+                prompt=prompt,
+                LLM_MODEL=engine_name,
+                base_url=api_base,
+                api_key=api_key,
+                TAU=temperature,
                 max_tokens=max_tokens,
-                stop=stop if stop else None,
+                stop=stop,
+                MAX_TRIALS=3,
+                TIME_GAP=2.0,
             )
-            all_responses.extend([
-                choice.message.content for choice in response.choices
-            ])
-            n -= current_batch_size
-        return all_responses if orig_n > 1 else all_responses[0]
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+            if response is not None:
+                if isinstance(response, list):
+                    all_responses.extend(response)
+                else:
+                    all_responses.append(response)
+        n -= current_batch_size
+    
+    if not all_responses:
         return None
+    
+    return all_responses if orig_n > 1 else all_responses[0]
 
 
 # ============================================================================
@@ -512,8 +624,13 @@ def run_verification(
     Returns:
         List of verification results
     """
+    # Auto-detect question column name (support both "question" and "query")
+    question_col = "question" if "question" in df.columns else "query"
+    if question_col not in df.columns:
+        raise ValueError(f"DataFrame must contain either 'question' or 'query' column. Found columns: {list(df.columns)}")
+    
     verifier_inputs = df.apply(
-        lambda row: make_verifier_input(row["question"], row[ans_col]),
+        lambda row: make_verifier_input(row[question_col], row[ans_col]),
         axis=1,
     )
     verifier_call = partial(

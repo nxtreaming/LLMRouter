@@ -8,15 +8,15 @@ Usage:
     python main_automix.py [--config CONFIG_PATH]
 
 Arguments:
-    --config: Path to YAML configuration file (default: configs/model_config_test/automix.yaml)
+    --config: Path to YAML configuration file (default: configs/model_config_train/automix.yaml)
 """
 
 import os
 import sys
 import argparse
-import shutil
 import pandas as pd
 import yaml
+import tempfile
 
 # Add project root directory to Python path
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
@@ -25,14 +25,13 @@ if PROJECT_ROOT not in sys.path:
 print("Running in: ", PROJECT_ROOT)
 
 
-from llmrouter.models.Automix import (
+from llmrouter.models.automix import (
     AutomixRouter,
     AutomixRouterTrainer,
     AutomixModel,
     POMDP,
     Threshold,
     SelfConsistency,
-    prepare_automix_data,
 )
 from llmrouter.utils.data_convert import (
     convert_data,
@@ -53,7 +52,7 @@ def load_config(config_path: str = None) -> dict:
     """
     if config_path is None:
         config_path = os.path.join(
-            PROJECT_ROOT, "configs", "model_config_test", "automix.yaml"
+            PROJECT_ROOT, "configs", "model_config_train", "automix.yaml"
         )
     elif not os.path.isabs(config_path):
         config_path = os.path.join(PROJECT_ROOT, config_path)
@@ -94,159 +93,96 @@ def get_routing_method(method_name: str, num_bins: int):
     return method_map[method_name](num_bins=num_bins)
 
 
-def convert_default_data(config: dict) -> str:
+def convert_default_data_to_memory(config: dict) -> pd.DataFrame:
     """
-    Convert default_data to required format
-    
+    Convert default_data to required format (in-memory, no file output)
+
     Args:
-        config: Configuration dictionary containing data_conversion settings
-    
+        config: Configuration dictionary containing data_path settings
+
     Returns:
-        Path to merged data file
+        Merged DataFrame with train and test data
     """
     data_cfg = config["data_path"]
-    conv_cfg = data_cfg.get("conversion", {})
 
-    output_dir = data_cfg.get("output_dir", "data/automix")
-    if not os.path.isabs(output_dir):
-        output_dir = os.path.join(PROJECT_ROOT, output_dir)
+    # Get input file paths
+    test_input = data_cfg["routing_data_test"]
+    train_input = data_cfg["routing_data_train"]
 
-    default_data_dir = conv_cfg.get("default_data_dir", "data/default_data")
-    if not os.path.isabs(default_data_dir):
-        default_data_dir = os.path.join(PROJECT_ROOT, default_data_dir)
+    # Handle relative paths
+    if not os.path.isabs(test_input):
+        test_input = os.path.join(PROJECT_ROOT, test_input)
+    if not os.path.isabs(train_input):
+        train_input = os.path.join(PROJECT_ROOT, train_input)
 
-    prepared_path = data_cfg.get(
-        "prepared_data",
-        os.path.join(output_dir, conv_cfg.get("merged_file", "train_test_nq_split.jsonl")),
-    )
-    if not os.path.isabs(prepared_path):
-        prepared_path = os.path.join(PROJECT_ROOT, prepared_path)
+    # Load and process data in memory
+    with tempfile.TemporaryDirectory() as temp_dir:
+        test_output = os.path.join(temp_dir, "test_data.jsonl")
+        train_output = os.path.join(temp_dir, "train_data.json")
+        merged_output = os.path.join(temp_dir, "merged_data.jsonl")
 
-    os.makedirs(output_dir, exist_ok=True)
+        # Convert test data to temporary file
+        if os.path.exists(test_input):
+            print(f"Converting test data from: {test_input}")
+            convert_data(
+                input_file=test_input,
+                output_file=test_output,
+                use_llm=False,
+            )
+        else:
+            raise FileNotFoundError(f"Test data file not found: {test_input}")
 
-    input_train = os.path.join(default_data_dir, conv_cfg.get("train_file", "default_routing_train_data.jsonl"))
-    input_test = os.path.join(default_data_dir, conv_cfg.get("test_file", "default_routing_test_data.jsonl"))
-    output_train = os.path.join(output_dir, conv_cfg.get("train_output_file", "router_train_data_nq.json"))
-    output_test = os.path.join(output_dir, conv_cfg.get("test_output_file", "router_test_data_nq.jsonl"))
-    merged_output = os.path.join(output_dir, conv_cfg.get("merged_file", "train_test_nq_split.jsonl"))
+        # Convert train data to temporary file
+        if os.path.exists(train_input):
+            print(f"Converting train data from: {train_input}")
+            convert_train_data(
+                input_file=train_input,
+                output_file=train_output,
+            )
+        else:
+            raise FileNotFoundError(f"Train data file not found: {train_input}")
 
-    if os.path.exists(prepared_path):
-        print(f"Prepared Automix data already exists: {prepared_path}")
-        return prepared_path
-    
-    # Convert test data
-    if os.path.exists(input_test):
-        print(f"Converting test data: {input_test} -> {output_test}")
-        convert_data(
-            input_file=input_test,
-            output_file=output_test,
-            use_llm=False,
-        )
-    else:
-        print(f"Warning: Test data file not found: {input_test}")
-        output_test = None
-
-    if os.path.exists(input_train):
-        print(f"Converting train data: {input_train} -> {output_train}")
-        convert_train_data(
-            input_file=input_train,
-            output_file=output_train,
-        )
-    else:
-        print(f"Warning: Train data file not found: {input_train}")
-        output_train = None
-
-    if output_test and output_train and os.path.exists(output_test) and os.path.exists(output_train):
-        print(f"Merging data: {output_test} + {output_train} -> {merged_output}")
+        # Merge data to temporary file
+        print(f"Merging train and test data in memory")
         merge_train_test(
-            test_file=output_test,
-            train_file=output_train,
+            test_file=test_output,
+            train_file=train_output,
             output_file=merged_output,
         )
-        if prepared_path != merged_output:
-            shutil.copy2(merged_output, prepared_path)
-        return prepared_path
-    else:
-        raise FileNotFoundError("Failed to convert Automix data files. Please check input files exist.")
+
+        # Load merged data into memory
+        merged_df = pd.read_json(merged_output, lines=True, orient="records")
+
+    return merged_df
 
 
 def train_and_evaluate(config: dict):
     """
-    Train and evaluate using real data
-    Data files need to be prepared first
+    Train and evaluate using configuration
 
     Args:
         config: Configuration dictionary loaded from YAML file
     """
-    data_cfg = config["data_path"]
-    model_cfg = config["model_path"]
     hparam = config["hparam"]
-    train_cfg = config.get("train_param", {})
-    display_cfg = config.get(
-        "display",
-        {
-            "separator_width": 70,
-            "precision": {
-                "ibc_lift": 4,
-                "performance": 4,
-                "cost": 2,
-                "percentage": 1,
-            },
-        },
-    )
-    sep_width = display_cfg["separator_width"]
+    sep_width = 70
 
     print("=" * sep_width)
-    print("Example 1: Training and evaluation with real data")
+    print("Automix Router Training and Evaluation")
     print("=" * sep_width)
 
-    # Get paths from configuration
-    data_path = data_cfg.get("prepared_data", "data/automix/router_automix_llamapair_ver_outputs.jsonl")
-    if not os.path.isabs(data_path):
-        data_path = os.path.join(PROJECT_ROOT, data_path)
-
-    output_dir = data_cfg.get("output_dir", "data/automix")
-    if not os.path.isabs(output_dir):
-        output_dir = os.path.join(PROJECT_ROOT, output_dir)
-
-    if not os.path.exists(data_path):
-        print(f"\nStep 0: Convert default_data to required format")
-        print("-" * sep_width)
-        try:
-            data_path = convert_default_data(config)
-            print(f"Data conversion completed: {data_path}")
-        except Exception as e:
-            print(f"Error converting data: {e}")
-            print(f"Please ensure data files exist or run data preparation pipeline first")
-            return
-
-    # Check if data file exists
-    if not os.path.exists(data_path):
-        print(f"Error: Data file not found: {data_path}")
-        print("Please prepare data files or run data preparation pipeline first")
-        return
-
-    print(f"\nStep 1: Prepare data (get model predictions and self-verification)")
+    print(f"\nStep 1: Load and prepare data")
     print("-" * sep_width)
 
-    # Skip this step if data is already prepared
-    final_data_path = os.path.join(output_dir, "router_automix_llamapair_ver_outputs.jsonl")
-    skip_data_prep = os.path.exists(final_data_path)
-
-    if skip_data_prep:
-        print("Detected prepared data, skipping data preparation step")
-        df = pd.read_json(final_data_path, lines=True, orient="records")
-    else:
-        df = prepare_automix_data(
-            input_data_path=data_path,
-            output_dir=output_dir,
-            engine_small=model_cfg["engine_small"],
-            engine_large=model_cfg["engine_large"],
-        )
-
-    print(f"\nPreparation complete! Dataset size: {len(df)}")
-    print(f"Training set size: {len(df[df['split'] == 'train'])}")
-    print(f"Test set size: {len(df[df['split'] == 'test'])}")
+    # Convert data in memory (no file output)
+    try:
+        df = convert_default_data_to_memory(config)
+        print(f"Data loaded successfully! Dataset size: {len(df)}")
+        print(f"Training set size: {len(df[df['split'] == 'train'])}")
+        print(f"Test set size: {len(df[df['split'] == 'test'])}")
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        print(f"Please ensure data files exist in the configured paths")
+        return None
 
     print(f"\nStep 2: Create Automix router")
     print("-" * sep_width)
@@ -258,17 +194,17 @@ def train_and_evaluate(config: dict):
     # Create model
     model = AutomixModel(
         method=method,
-        slm_column=hparam["columns"]["slm"],
-        llm_column=hparam["columns"]["llm"],
-        verifier_column=hparam["columns"]["verifier"],
-        costs=[hparam["costs"]["small_model"], hparam["costs"]["large_model"]],
-        verifier_cost=hparam["costs"]["verifier"],
-        verbose=train_cfg.get("verbose", True),
+        slm_column=hparam["slm_column"],
+        llm_column=hparam["llm_column"],
+        verifier_column=hparam["verifier_column"],
+        costs=[hparam["small_model_cost"], hparam["large_model_cost"]],
+        verifier_cost=hparam["verifier_cost"],
+        verbose=hparam["verbose"],
     )
     print(
-        f"Model configuration: Small model cost={cfg['costs']['small_model']}, "
-        f"Large model cost={cfg['costs']['large_model']}, "
-        f"Verifier cost={cfg['costs']['verifier']}"
+        f"Model configuration: Small model cost={hparam['small_model_cost']}, "
+        f"Large model cost={hparam['large_model_cost']}, "
+        f"Verifier cost={hparam['verifier_cost']}"
     )
 
     # Create router
@@ -279,7 +215,12 @@ def train_and_evaluate(config: dict):
     print("-" * sep_width)
 
     # Create trainer
-    trainer = AutomixRouterTrainer(router=router, device=train_cfg.get("device", "cpu"))
+    cost_constraint = hparam.get("cost_constraint", None)
+    trainer = AutomixRouterTrainer(
+        router=router,
+        device=hparam["device"],
+        cost_constraint=cost_constraint
+    )
 
     # Split data
     train_df = df[df["split"] == "train"].copy()
@@ -291,43 +232,38 @@ def train_and_evaluate(config: dict):
     print(f"\nStep 4: View results")
     print("-" * sep_width)
 
-    # Get display precision configuration
-    prec = display_cfg["precision"]
-
     print("\nTraining set results:")
     print(f"  Best parameter: {results['train']['best_param']}")
-    print(f"  IBC Lift: {results['train']['metrics']['ibc_lift']:.{prec['ibc_lift']}f}")
-    print(f"  Average performance: {results['train']['metrics']['avg_performance']:.{prec['performance']}f}")
-    print(f"  Average cost: {results['train']['metrics']['avg_cost']:.{prec['cost']}f}")
+    print(f"  IBC Lift: {results['train']['metrics']['ibc_lift']:.4f}")
+    print(f"  Average performance: {results['train']['metrics']['avg_performance']:.4f}")
+    print(f"  Average cost: {results['train']['metrics']['avg_cost']:.2f}")
 
     print("\nTest set results:")
-    print(f"  IBC Lift: {results['test']['ibc_lift']:.{prec['ibc_lift']}f}")
-    print(f"  Average performance: {results['test']['avg_performance']:.{prec['performance']}f}")
-    print(f"  Average cost: {results['test']['avg_cost']:.{prec['cost']}f}")
+    print(f"  IBC Lift: {results['test']['ibc_lift']:.4f}")
+    print(f"  Average performance: {results['test']['avg_performance']:.4f}")
+    print(f"  Average cost: {results['test']['avg_cost']:.2f}")
 
     # Calculate routing statistics
     test_decisions = results["test"]["route_to_llm"]
     num_routed = int(test_decisions.sum())
     total = len(test_decisions)
-    print(f"  Routed to large model: {num_routed}/{total} ({num_routed/total*100:.{prec['percentage']}f}%)")
+    print(f"  Routed to large model: {num_routed}/{total} ({num_routed/total*100:.1f}%)")
 
     print(f"\nStep 5: Inference with trained router")
     print("-" * sep_width)
 
     # Select a few test samples for inference
-    num_samples = train_cfg.get("num_samples", 2)
+    num_samples = hparam.get("num_inference_samples", 2)
     sample_data = test_df.head(num_samples)
 
     for idx, row in sample_data.iterrows():
         decision = router.model.infer(row)
         model_used = "Large model (70B)" if decision else "Small model (13B)"
         print(f"\nQuestion: {row['question'][:60]}...")
-        print(f"  Verifier score: {row[cfg['columns']['verifier']]:.3f}")
-        print(f"  Small model F1: {row[cfg['columns']['slm']]:.3f}")
-        print(f"  Large model F1: {row[cfg['columns']['llm']]:.3f}")
+        print(f"  Verifier score: {row[hparam['verifier_column']]:.3f}")
+        print(f"  Small model F1: {row[hparam['slm_column']]:.3f}")
+        print(f"  Large model F1: {row[hparam['llm_column']]:.3f}")
         print(f"  Routing decision: {model_used}")
-
-    return results
 
     return results
 
@@ -335,14 +271,14 @@ def main():
     """Main function"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description="Automix Router Usage Example",
+        description="Automix Router Training and Evaluation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--config",
         type=str,
         default=None,
-        help="Path to YAML configuration file (default: configs/model_config_test/automix.yaml)",
+        help="Path to YAML configuration file (default: configs/model_config_train/automix.yaml)",
     )
     args = parser.parse_args()
 
@@ -354,20 +290,22 @@ def main():
         print("Please ensure the configuration file exists or use --config to specify the configuration file path")
         return
 
-    sep_width = config["display"]["separator_width"]
+    sep_width = 70
 
     print("\n" + "=" * sep_width)
-    print("Automix Router Usage Example")
+    print("Automix Router Training and Evaluation")
     print("=" * sep_width)
 
     try:
-        train_and_evaluate(config)
+        results = train_and_evaluate(config)
+        if results is None:
+            print("\nTraining failed. Please check the error messages above.")
     except Exception as e:
-        print(f"\nReal data example failed: {e}")
+        print(f"\nTraining failed: {e}")
         print("Hint: Please ensure data files exist and configuration is correct")
 
     print("\n" + "=" * sep_width)
-    print("Example completed!") 
+    print("Training completed!")
     print("=" * sep_width)
 
 

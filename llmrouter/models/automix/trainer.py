@@ -45,15 +45,19 @@ class AutomixRouterTrainer(BaseTrainer):
         self.train_df = router.train_df
         self.test_df = router.test_df
 
-        # Get training parameters
-        train_param = self.cfg.get("train_param", {})
-        self.cost_constraint = train_param.get("cost_constraint", None)
-        self.verbose = train_param.get("verbose", False)
+        # Get training parameters (support both train_param and hparam)
+        hparam = self.cfg.get("hparam", {})
+
+        # Try to get cost_constraint from train_param first, then hparam
+        self.cost_constraint = hparam.get("cost_constraint", None)
+
+        # Try to get verbose from train_param first, then hparam
+        self.verbose = hparam.get("verbose", False)
 
         print("[AutomixRouterTrainer] Initialized successfully!")
         print(f"  Training samples: {len(self.train_df)}")
         print(f"  Test samples: {len(self.test_df)}")
-        print(f"  Routing method: {self.cfg['hparam']['routing_method']}")
+        print(f"  Routing method: {hparam.get('routing_method', 'POMDP')}")
 
     def loss_func(self, outputs, batch) -> torch.Tensor:
         """
