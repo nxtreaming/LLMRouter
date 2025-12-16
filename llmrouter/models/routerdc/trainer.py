@@ -43,31 +43,30 @@ class DCTrainer(BaseTrainer):
         """
         # Get config from router
         self.cfg = router.cfg
-        training_config = self.cfg['training']
+        hparam = self.cfg['hparam']
 
         # Set device
         if device is None:
-            device = training_config.get('device', 'cpu')
+            device = hparam.get('device', 'cpu')
 
         # Create optimizer
-        optimizer = torch.optim.AdamW(router.parameters(), lr=training_config['learning_rate'])
+        optimizer = torch.optim.AdamW(router.parameters(), lr=hparam['learning_rate'])
 
         super().__init__(router=router, optimizer=optimizer, device=device)
 
         # Training hyperparameters
-        self.top_k = training_config['top_k']
-        self.last_k = training_config['last_k']
-        self.temperature = training_config['temperature']
-        self.sample_loss_weight = training_config['sample_loss_weight']
-        self.cluster_loss_weight = training_config['cluster_loss_weight']
-        self.H = training_config['H']
-        self.gradient_accumulation = training_config['gradient_accumulation']
-        self.batch_size = training_config['batch_size']
-        self.training_steps = training_config['training_steps']
+        self.top_k = hparam['top_k']
+        self.last_k = hparam['last_k']
+        self.temperature = hparam['temperature']
+        self.sample_loss_weight = hparam['sample_loss_weight']
+        self.cluster_loss_weight = hparam['cluster_loss_weight']
+        self.H = hparam['H']
+        self.gradient_accumulation = hparam['gradient_accumulation']
+        self.batch_size = hparam['batch_size']
+        self.training_steps = hparam['training_steps']
 
         # Evaluation settings
-        eval_config = self.cfg['evaluation']
-        self.eval_steps = eval_config['eval_steps']
+        self.eval_steps = hparam['eval_steps']
 
         # Save paths
         save_model_path = self.cfg['model_path']['save_model_path']
@@ -89,6 +88,10 @@ class DCTrainer(BaseTrainer):
         self.training_log = []
         self.max_average = 0.0
         self.max_training_average = 0.0
+
+        # Move model to device
+        self.router = self.router.to(self.device)
+        print(f"[DCTrainer] Model moved to device: {self.device}")
 
         print("[DCTrainer] Initialized successfully!")
         print(f"  Top-k: {self.top_k}")
@@ -155,8 +158,11 @@ class DCTrainer(BaseTrainer):
         - Periodic evaluation
         - Model checkpointing
         """
+        # Ensure model is on the correct device
+        self.router = self.router.to(self.device)
         self.router.train()
         print(f"\n[DCTrainer] Starting training for {self.training_steps} steps")
+        print(f"[DCTrainer] Using device: {self.device}")
         print("=" * 70)
 
         # Create dataloader

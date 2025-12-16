@@ -1,41 +1,40 @@
-# Automix Router configuration (test)
+# Config parameters for automix testing:
+
 
 data_path:
-  prepared_data: "data/automix/router_automix_llamapair_ver_outputs.jsonl"
-  output_dir: "data/automix"
-  conversion:
-    default_data_dir: "data/default_data"
-    train_file: "default_routing_train_data.jsonl"
-    test_file: "default_routing_test_data.jsonl"
-    train_output_file: "router_train_data_nq.json"
-    test_output_file: "router_test_data_nq.json"
-    merged_file: "train_test_nq_split.jsonl"
+  query_data_train: 'data/example_data/query_data/default_query_train.jsonl'
+  query_data_test: 'data/example_data/query_data/default_query_test.jsonl'
+  routing_data_train: 'data/example_data/routing_data/default_routing_train_data.jsonl'
+  routing_data_test: 'data/example_data/routing_data/default_routing_test_data.jsonl'
+  llm_data: 'data/example_data/llm_candidates/default_llm.json'
+  llm_embedding_data: 'data/example_data/llm_candidates/default_llm_embeddings.json'
 
 model_path:
-  engine_small: "meta/llama-3.1-8b-instruct"
-  engine_large: "meta/llama-3.1-70b-instruct"
+  load_model_path: 'saved_models/automix/automix_model.pkl'
+
+
+metric:
+  weights:
+    performance: 1
+    cost: 0
+    llm_judge: 0
 
 hparam:
-  routing_method: "POMDP"
-  num_bins: 8
-  columns:
-    slm: "llama13b_f1"
-    llm: "llama70b_f1"
-    verifier: "p_ver_13b"
-  costs:
-    small_model: 1
-    large_model: 50
-    verifier: 1
+  routing_method: "POMDP"         # Routing method: "Threshold", "SelfConsistency", or "POMDP"
+  num_bins: 8                     # Number of bins for discretization
+  engine_small: "meta/llama-3.1-8b-instruct"    # Small model identifier
+  engine_large: "meta/llama-3.1-70b-instruct"   # Large model identifier
+  slm_column: "llama13b_f1"       # Column name for small model performance
+  llm_column: "llama70b_f1"       # Column name for large model performance
+  verifier_column: "p_ver_13b"    # Column name for verifier scores
+  small_model_cost: 1             # Cost of using small model
+  large_model_cost: 50            # Cost of using large model
+  verifier_cost: 1                # Cost of using verifier
+  device: "cpu"                   # Device for computation
+  verbose: false                  # Whether to print verbose output
+  cost_constraint: null           # Optional (min_cost, max_cost) tuple
+  max_workers: 1                  # Number of parallel workers for API calls (increase for faster processing)
 
-train_param:
-  device: "cpu"
-  verbose: true
-  num_samples: 2
 
-display:
-  separator_width: 70
-  precision:
-    ibc_lift: 4
-    performance: 4
-    cost: 2
-    percentage: 1
+
+

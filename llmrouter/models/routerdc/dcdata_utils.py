@@ -109,7 +109,7 @@ def add_clusters(data: List[Dict], n_clusters: int = 3, random_state: int = 42) 
     Returns:
         list[dict]: List of data with cluster_id added
     """
-    print(f"  Assigning clusters to {len(data)} samples...")
+    # print(f"  Assigning clusters to {len(data)} samples...")
 
     # Extract features: performance scores of each model
     features = []
@@ -129,29 +129,30 @@ def add_clusters(data: List[Dict], n_clusters: int = 3, random_state: int = 42) 
 
     # Print cluster distribution
     cluster_dist = Counter(cluster_labels)
-    print(f"  Cluster distribution: {dict(cluster_dist)}")
+    # print(f"  Cluster distribution: {dict(cluster_dist)}")
 
     return data
 
 
 def preprocess_data(
     input_path: str,
-    output_path: str,
     add_cluster_id: bool = True,
     n_clusters: int = 3,
     max_samples: int = None
 ):
     """
-    Preprocess data from JSONL format to DCRouter JSON format.
+    Preprocess data from JSONL format to DCRouter format.
 
     Args:
         input_path (str): Input JSONL file path
-        output_path (str): Output JSON file path
         add_cluster_id (bool): Whether to add cluster_id (default: True)
         n_clusters (int): Number of clusters (default: 3)
         max_samples (int): Maximum number of samples (default: None for all)
+
+    Returns:
+        list[dict]: Preprocessed data ready for DCDataset
     """
-    print(f"  Reading data from: {input_path}")
+    # print(f"  Reading data from: {input_path}")
 
     # Read JSONL data
     input_data = []
@@ -160,17 +161,17 @@ def preprocess_data(
             if line.strip():
                 input_data.append(json.loads(line.strip()))
 
-    print(f"  Loaded {len(input_data)} records")
+    # print(f"  Loaded {len(input_data)} records")
 
     # Aggregate by query
-    print(f"  Aggregating records by query...")
+    # print(f"  Aggregating records by query...")
     aggregated_data = aggregate_by_query(input_data)
-    print(f"  Aggregated to {len(aggregated_data)} unique queries")
+    # print(f"  Aggregated to {len(aggregated_data)} unique queries")
 
     # Limit samples if specified
     if max_samples and len(aggregated_data) > max_samples:
         aggregated_data = aggregated_data[:max_samples]
-        print(f"  Limited to {len(aggregated_data)} samples")
+        # print(f"  Limited to {len(aggregated_data)} samples")
 
     # Convert format
     converted_data = convert_format(aggregated_data)
@@ -179,11 +180,6 @@ def preprocess_data(
     if add_cluster_id:
         converted_data = add_clusters(converted_data, n_clusters=n_clusters)
 
-    # Save
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, 'w') as f:
-        json.dump(converted_data, f, indent=2, ensure_ascii=False)
-
-    print(f"  Saved {len(converted_data)} samples to: {output_path}")
+    # print(f"  Preprocessed {len(converted_data)} samples")
 
     return converted_data
