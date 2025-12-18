@@ -91,15 +91,6 @@ class DCTrainer(BaseTrainer):
 
         # Move model to device
         self.router = self.router.to(self.device)
-        print(f"[DCTrainer] Model moved to device: {self.device}")
-
-        print("[DCTrainer] Initialized successfully!")
-        print(f"  Top-k: {self.top_k}")
-        print(f"  Last-k: {self.last_k}")
-        print(f"  Temperature: {self.temperature}")
-        print(f"  Sample loss weight: {self.sample_loss_weight}")
-        print(f"  Cluster loss weight: {self.cluster_loss_weight}")
-        print(f"  Save directory: {self.save_dir}")
 
     def loss_func(self, outputs, batch) -> torch.Tensor:
         """
@@ -161,9 +152,6 @@ class DCTrainer(BaseTrainer):
         # Ensure model is on the correct device
         self.router = self.router.to(self.device)
         self.router.train()
-        print(f"\n[DCTrainer] Starting training for {self.training_steps} steps")
-        print(f"[DCTrainer] Using device: {self.device}")
-        print("=" * 70)
 
         # Create dataloader
         train_dataloader = DataLoader(
@@ -232,16 +220,9 @@ class DCTrainer(BaseTrainer):
 
         # Save final model
         torch.save(self.router.model.state_dict(), self.final_model_path)
-        print(f"\n[DCTrainer] Final model saved to: {self.final_model_path}")
 
         # Save final logs
         self._save_logs()
-
-        print("\n" + "=" * 70)
-        print("[DCTrainer] Training complete!")
-        print(f"  Best test average: {self.max_average:.4f}")
-        print(f"  Best train average: {self.max_training_average:.4f}")
-        print("=" * 70)
 
     def _evaluate_and_save(self, step: int):
         """
@@ -250,8 +231,6 @@ class DCTrainer(BaseTrainer):
         Args:
             step (int): Current training step
         """
-        print(f"\n[DCTrainer] Evaluation at step {step + 1}")
-
         self.router.eval()
 
         # Separate validation and test datasets
@@ -261,43 +240,35 @@ class DCTrainer(BaseTrainer):
         # Evaluate on validation sets
         val_results = {}
         if val_datasets:
-            print("  Validation:")
             for dataset, data_type, name in val_datasets:
                 result = self._evaluate_dataset(dataset, data_type)
                 val_results[name] = result
-                print(f"    {name}: routing_acc={result[0]:.4f}, task_acc={result[1]:.4f}")
 
         # Evaluate on test sets
         test_results = {}
         if test_datasets:
-            print("  Test:")
             for dataset, data_type, name in test_datasets:
                 result = self._evaluate_dataset(dataset, data_type)
                 test_results[name] = result
-                print(f"    {name}: routing_acc={result[0]:.4f}, task_acc={result[1]:.4f}")
 
         # Compute averages
         if test_results:
             test_average = sum([r[1] for r in test_results.values()]) / len(test_results)
-            print(f"  Average test task_acc: {test_average:.4f}")
 
             # Save best test model
             if test_average > self.max_average:
                 checkpoint_path = os.path.join(self.save_dir, "best_model.pth")
                 torch.save(self.router.model.state_dict(), checkpoint_path)
                 self.max_average = test_average
-                print(f"  New best test model saved!")
 
         if val_results:
             train_average = sum([r[1] for r in val_results.values()]) / len(val_results)
-            print(f"  Average train task_acc: {train_average:.4f}")
 
             # Save best training model
             if train_average > self.max_training_average:
                 checkpoint_path = os.path.join(self.save_dir, "best_training_model.pth")
                 torch.save(self.router.model.state_dict(), checkpoint_path)
                 self.max_training_average = train_average
-                print(f"  New best training model saved!")
 
         # Log results
         all_results = {**val_results, **test_results}
@@ -388,5 +359,3 @@ class DCTrainer(BaseTrainer):
         config_path = os.path.join(self.save_dir, "config.json")
         with open(config_path, 'w') as f:
             json.dump(config, f, indent=2)
-
-        print(f"[DCTrainer] Logs saved to {self.save_dir}")

@@ -46,7 +46,7 @@ class Threshold:
         self,
         data: pd.DataFrame,
         threshold: float = 0.5,
-        verifier_column: str = "p_ver_13b",
+        verifier_column: str = "p_ver_slm",
     ) -> pd.Series:
         """
         Determine routing decisions based on threshold.
@@ -63,7 +63,7 @@ class Threshold:
         return to_retry
 
     def generate_points(
-        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_slm"
     ) -> List[float]:
         """
         Generate candidate threshold points for training.
@@ -90,7 +90,7 @@ class DoubleThreshold(Threshold):
         self,
         data: pd.DataFrame,
         threshold: Tuple[float, float] = (0.25, 0.75),
-        verifier_column: str = "p_ver_13b",
+        verifier_column: str = "p_ver_slm",
     ) -> pd.Series:
         """
         Determine routing decisions based on double threshold.
@@ -112,7 +112,7 @@ class DoubleThreshold(Threshold):
         return to_retry
 
     def generate_points(
-        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_slm"
     ) -> List[Tuple[float, float]]:
         """
         Generate candidate double threshold points for training.
@@ -142,7 +142,7 @@ class TripleThreshold(DoubleThreshold):
         self,
         data: pd.DataFrame,
         threshold: Tuple[float, float, float] = (0.25, 0.5, 0.75),
-        verifier_column: str = "p_ver_13b",
+        verifier_column: str = "p_ver_slm",
     ) -> pd.Series:
         """
         Determine routing decisions based on triple threshold.
@@ -169,7 +169,7 @@ class TripleThreshold(DoubleThreshold):
         return to_retry
 
     def generate_points(
-        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_slm"
     ) -> List[Tuple[float, float, float]]:
         """
         Generate candidate triple threshold points for training.
@@ -197,7 +197,7 @@ class SelfConsistency(Threshold):
     """
 
     def generate_points(
-        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_slm"
     ) -> List[float]:
         """
         Generate candidate points (fixed at 0.5 for self-consistency).
@@ -234,7 +234,7 @@ class POMDPSimple:
         self.init_belief = init_belief
 
     def compute_obs_probs(
-        self, df: pd.DataFrame, verifier_column: str = "p_ver_13b"
+        self, df: pd.DataFrame, verifier_column: str = "p_ver_slm"
     ) -> List[Tuple[int]]:
         """
         Compute observation probabilities and generate action sequences.
@@ -321,7 +321,7 @@ class POMDPSimple:
         self,
         data: pd.DataFrame,
         action_seq: List[int] = [],
-        verifier_column: str = "p_ver_13b",
+        verifier_column: str = "p_ver_slm",
     ) -> pd.Series:
         """
         Determine routing decisions based on POMDP action sequence.
@@ -347,7 +347,7 @@ class POMDPSimple:
             return value.apply(lambda x: self.get_action(x, action_seq))
 
     def generate_points(
-        self, data: pd.DataFrame, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame, verifier_column: str = "p_ver_slm"
     ) -> List[Tuple[int]]:
         """
         Generate candidate action sequences for training.
@@ -373,8 +373,8 @@ class GreedyPOMDP(POMDPSimple):
         self,
         num_bins: int,
         init_belief: bool = False,
-        slm_column: str = "llama13b_f1",
-        llm_column: str = "llama70b_f1",
+        slm_column: str = "slm_f1",
+        llm_column: str = "llm_f1",
         **kwargs
     ):
         """
@@ -390,7 +390,7 @@ class GreedyPOMDP(POMDPSimple):
         self.llm_column = llm_column
 
     def generate_points(
-        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_slm"
     ) -> List[List[int]]:
         """
         Generate candidate action sequences using greedy approach.
@@ -458,7 +458,7 @@ class AutomixUnion:
         self,
         data: pd.DataFrame,
         param: Tuple,
-        verifier_column: str = "p_ver_13b",
+        verifier_column: str = "p_ver_slm",
     ) -> pd.Series:
         """
         Run routing using one of the combined methods.
@@ -476,7 +476,7 @@ class AutomixUnion:
         )
 
     def generate_points(
-        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_slm"
     ) -> List[Tuple]:
         """
         Generate candidate points from all combined methods.
@@ -510,7 +510,7 @@ class FixedAnswerRouting:
         self,
         method,
         fixed_routing_elems: List[str] = [],
-        ans_column: str = "llama13b_pred_ans",
+        ans_column: str = "slm_pred_ans",
     ):
         """
         Args:
@@ -526,7 +526,7 @@ class FixedAnswerRouting:
         self,
         data: pd.DataFrame,
         param,
-        verifier_column: str = "p_ver_13b",
+        verifier_column: str = "p_ver_slm",
     ) -> pd.Series:
         """
         Determine routing decisions combining fixed and method-based routing.
@@ -551,7 +551,7 @@ class FixedAnswerRouting:
         return to_retry
 
     def generate_points(
-        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_13b"
+        self, data: pd.DataFrame = None, verifier_column: str = "p_ver_slm"
     ) -> List:
         """
         Generate candidate points from base method.

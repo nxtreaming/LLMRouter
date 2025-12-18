@@ -54,11 +54,6 @@ class AutomixRouterTrainer(BaseTrainer):
         # Try to get verbose from train_param first, then hparam
         self.verbose = hparam.get("verbose", False)
 
-        print("[AutomixRouterTrainer] Initialized successfully!")
-        print(f"  Training samples: {len(self.train_df)}")
-        print(f"  Test samples: {len(self.test_df)}")
-        print(f"  Routing method: {hparam.get('routing_method', 'POMDP')}")
-
     def loss_func(self, outputs, batch) -> torch.Tensor:
         """
         Compute loss (not used for Automix).
@@ -79,12 +74,7 @@ class AutomixRouterTrainer(BaseTrainer):
         2. Select best parameter based on IBC lift
         3. Evaluate on test data
         """
-        print("\n" + "=" * 70)
-        print("[AutomixRouterTrainer] Starting training (parameter search)")
-        print("=" * 70)
-
         # Perform parameter search on training data
-        print(f"\n[AutomixRouterTrainer] Training on {len(self.train_df)} samples...")
         best_param = self.router.model.train_routing(
             self.train_df,
             cost_constraint=self.cost_constraint
@@ -93,33 +83,12 @@ class AutomixRouterTrainer(BaseTrainer):
         # Evaluate on training data
         train_metrics = self.router.model.evaluate(self.train_df, return_dict=True)
 
-        print("\n[AutomixRouterTrainer] Training Results:")
-        print(f"  Best parameter: {best_param}")
-        print(f"  IBC Lift: {train_metrics['ibc_lift']:.4f}")
-        print(f"  Avg Performance: {train_metrics['avg_performance']:.4f}")
-        print(f"  Avg Cost: {train_metrics['avg_cost']:.2f}")
-
         # Evaluate on test data
-        print(f"\n[AutomixRouterTrainer] Evaluating on {len(self.test_df)} samples...")
         test_metrics = self.router.model.evaluate(
             self.test_df,
             return_dict=True,
             return_decisions=True
         )
-
-        decisions = test_metrics["route_to_llm"]
-        num_routed = int(decisions.sum())
-        total = len(self.test_df)
-
-        print("\n[AutomixRouterTrainer] Test Results:")
-        print(f"  IBC Lift: {test_metrics['ibc_lift']:.4f}")
-        print(f"  Avg Performance: {test_metrics['avg_performance']:.4f}")
-        print(f"  Avg Cost: {test_metrics['avg_cost']:.2f}")
-        print(f"  Routed to LLM: {num_routed}/{total} ({num_routed/total*100:.1f}%)")
-
-        print("\n" + "=" * 70)
-        print("[AutomixRouterTrainer] Training complete!")
-        print("=" * 70)
 
         return {
             "train": {

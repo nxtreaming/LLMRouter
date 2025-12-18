@@ -10,8 +10,6 @@ data_path:
   llm_embedding_data: 'data/example_data/llm_candidates/default_llm_embeddings.json'
 
 model_path:
-  load_model_path: 'saved_models/automix/automix_model.pkl'
-
 
 metric:
   weights:
@@ -22,11 +20,7 @@ metric:
 hparam:
   routing_method: "POMDP"         # Routing method: "Threshold", "SelfConsistency", or "POMDP"
   num_bins: 8                     # Number of bins for discretization
-  engine_small: "meta/llama-3.1-8b-instruct"    # Small model identifier
-  engine_large: "meta/llama-3.1-70b-instruct"   # Large model identifier
-  slm_column: "llama13b_f1"       # Column name for small model performance
-  llm_column: "llama70b_f1"       # Column name for large model performance
-  verifier_column: "p_ver_13b"    # Column name for verifier scores
+  inference_mode: true            # If true, skip data preprocessing (for inference only)
   small_model_cost: 1             # Cost of using small model
   large_model_cost: 50            # Cost of using large model
   verifier_cost: 1                # Cost of using verifier
@@ -34,7 +28,7 @@ hparam:
   verbose: false                  # Whether to print verbose output
   cost_constraint: null           # Optional (min_cost, max_cost) tuple
   max_workers: 1                  # Number of parallel workers for API calls (increase for faster processing)
-
+  min_samples: 5
 
 
 

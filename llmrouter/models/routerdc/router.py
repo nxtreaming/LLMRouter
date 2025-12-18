@@ -54,17 +54,14 @@ class DCRouter(MetaRouter):
 
         # Initialize tokenizer and backbone
         backbone_model = self.cfg['model_path']['backbone_model']
-        print(f"[DCRouter] Loading backbone model: {backbone_model}")
         self.tokenizer = AutoTokenizer.from_pretrained(
             backbone_model,
             truncation_side='left',
             padding=True
         )
         encoder_model = DebertaV2Model.from_pretrained(backbone_model)
-        print("[DCRouter] Backbone model loaded successfully!")
 
         # Load datasets
-        print(f"[DCRouter] Loading datasets...")
         hparam = self.cfg['hparam']
         self.train_dataset = DCDataset(
             data=self.train_data_processed,
@@ -83,11 +80,6 @@ class DCRouter(MetaRouter):
         self.test_dataset.register_tokenizer(self.tokenizer)
 
         num_llms = len(self.train_dataset.router_node)
-        print(f"[DCRouter] Datasets loaded:")
-        print(f"  Training samples: {len(self.train_dataset)}")
-        print(f"  Test samples: {len(self.test_dataset)}")
-        print(f"  Number of LLMs: {num_llms}")
-        print(f"  LLM names: {self.train_dataset.router_node}")
 
         # Create RouterModule
         model = RouterModule(
@@ -96,7 +88,6 @@ class DCRouter(MetaRouter):
             node_size=num_llms,
             similarity_function=hparam['similarity_function']
         )
-        print("[DCRouter] RouterModule created successfully!")
 
         # Save cfg before calling super().__init__() since it will be reset
         saved_cfg = self.cfg
@@ -118,14 +109,11 @@ class DCRouter(MetaRouter):
         train_data_raw = os.path.join(self.project_root, data_path_config['routing_data_train'])
         test_data_raw = os.path.join(self.project_root, data_path_config['routing_data_test'])
 
-        print("\n[DCRouter] Starting data preprocessing...")
-
         hparam = self.cfg['hparam']
         n_clusters = hparam.get('n_clusters', 3)
         max_test_samples = hparam.get('max_test_samples', 500)
 
         # Preprocess training data
-        # print("\n[DCRouter] Preprocessing training data...")
         self.train_data_processed = preprocess_data(
             input_path=train_data_raw,
             add_cluster_id=True,
@@ -134,15 +122,12 @@ class DCRouter(MetaRouter):
         )
 
         # Preprocess test data
-        # print("\n[DCRouter] Preprocessing test data...")
         self.test_data_processed = preprocess_data(
             input_path=test_data_raw,
             add_cluster_id=False,
             n_clusters=n_clusters,
             max_samples=max_test_samples
         )
-
-        print("[DCRouter] Data preprocessing completed!\n")
 
     def route(self, batch):
         """
@@ -209,11 +194,8 @@ class DCRouter(MetaRouter):
             checkpoint_path = os.path.join(save_dir, 'best_training_model.pth')
 
         if os.path.exists(checkpoint_path):
-            print(f"[DCRouter] Loading checkpoint from: {checkpoint_path}")
             state_dict = torch.load(checkpoint_path, map_location=device)
             self.model.load_state_dict(state_dict)
-        else:
-            print(f"[DCRouter] Warning: No checkpoint found. Using untrained model.")
 
         self.model = self.model.to(device)
         self.model.eval()

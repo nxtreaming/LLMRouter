@@ -29,9 +29,9 @@ class AutomixModel(nn.Module):
     def __init__(
         self,
         method,
-        slm_column: str = "llama13b_f1",
-        llm_column: str = "llama70b_f1",
-        verifier_column: str = "p_ver_13b",
+        slm_column: str = "slm_f1",
+        llm_column: str = "llm_f1",
+        verifier_column: str = "p_ver_slm",
         costs: List[int] = [1, 50],
         verifier_cost: int = 1,
         verbose: bool = False,
@@ -210,8 +210,6 @@ class AutomixModel(nn.Module):
 
         if not thresh_dic:
             # No valid parameters found
-            if self.verbose:
-                print("WARNING: No valid parameters found during training!")
             self.best_param = None
             return None
         
@@ -225,8 +223,6 @@ class AutomixModel(nn.Module):
         
         if not valid_scores:
             # All scores are invalid, use first parameter as fallback
-            if self.verbose:
-                print("WARNING: All IBC lift scores are invalid. Using first parameter as fallback.")
             self.best_param = eval(list(thresh_dic.keys())[0])
         else:
             # Find best parameter, handling inf and -inf
@@ -248,31 +244,38 @@ class AutomixModel(nn.Module):
             
             best_key = safe_max_key(valid_scores) if valid_scores else list(thresh_dic.keys())[0]
             self.best_param = eval(best_key)
-        
-        if self.verbose:
-            print("Best Param:", self.best_param, thresh_dic[str(self.best_param)])
 
         return self.best_param
 
     def infer(self, df_row: pd.Series):
         """
-        Run trained automix on given dataframe row to get routing decision.
+        Run automix on given dataframe row to get routing decision.
 
         Args:
             df_row: Single dataframe row
 
         Returns:
             Boolean indicating whether to route to large model
-
-        Raises:
-            ValueError: If model not trained yet
         """
+        # Use best parameter or default if not trained
         if self.best_param is None:
-            raise ValueError("Please train the model first")
-
-        to_retry = self.method.run(
-            df_row, self.best_param, verifier_column=self.verifier_column
-        )
+            # Use default parameter for untrained model
+            from .methods import AutomixUnion
+            if isinstance(self.method, AutomixUnion):
+                # For AutomixUnion, use Threshold method (last method,
+                # index 3) with default threshold 0.5
+                default_param = (0.5, 3)  # Threshold with threshold 0.5
+            else:
+                # For other methods (Threshold, etc.),
+                # use default threshold of 0.5
+                default_param = 0.5
+            to_retry = self.method.run(
+                df_row, default_param, verifier_column=self.verifier_column
+            )
+        else:
+            to_retry = self.method.run(
+                df_row, self.best_param, verifier_column=self.verifier_column
+            )
         return to_retry
 
     def forward(self, batch: dict) -> dict:
@@ -300,13 +303,31 @@ class AutomixModel(nn.Module):
                 data, best_param, verifier_column=self.verifier_column
             )
         else:
-            # During inference, use best parameter
+            # During inference, use best parameter or default
+            # If best_param is None, use default parameter for inference
             if self.best_param is None:
-                raise ValueError("Model must be trained before inference")
-            # Use the method.run directly on the entire DataFrame
-            to_retry = self.method.run(
-                data, self.best_param, verifier_column=self.verifier_column
-            )
+                # Use default parameter for untrained model
+                # Check if method is AutomixUnion (POMDP) which needs
+                # (param, method_index) tuple
+                from .methods import AutomixUnion
+                if isinstance(self.method, AutomixUnion):
+                    # For AutomixUnion, use Threshold method (last method,
+                    # index 3) with default threshold 0.5
+                    # POMDP contains: [POMDPSimple, GreedyPOMDP,
+                    # DoubleThreshold, Threshold]
+                    default_param = (0.5, 3)  # Threshold with threshold 0.5
+                else:
+                    # For other methods (Threshold, etc.),
+                    # use default threshold of 0.5
+                    default_param = 0.5
+                to_retry = self.method.run(
+                    data, default_param, verifier_column=self.verifier_column
+                )
+            else:
+                # Use the method.run directly on the entire DataFrame
+                to_retry = self.method.run(
+                    data, self.best_param, verifier_column=self.verifier_column
+                )
 
         # Convert to tensor
         decisions = torch.tensor(to_retry.values, dtype=torch.bool)

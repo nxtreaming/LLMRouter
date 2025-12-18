@@ -272,11 +272,9 @@ def get_llm_response_via_api(
             )
             break
         except Exception as e:
-            print(e)
             if "request timed out" in str(e).strip().lower():
                 break
             if trials > 0:
-                print("Retrying...")
                 time.sleep(TIME_GAP)
     
     if completion is None:
@@ -323,7 +321,6 @@ def call_openai_api(
         init_providers()
 
     if _openai_client is None:
-        print("Error: OpenAI client not initialized")
         return None
 
     # Get API credentials from global client
@@ -476,22 +473,29 @@ def compute_f1(
 
 
 def calculate_f1_for_models(
-    df: pd.DataFrame, model_sizes: List[str], ground_truth_col: str = "gt"
+    df: pd.DataFrame, model_names: List[str], ground_truth_col: str = "gt"
 ) -> pd.DataFrame:
     """
     Calculate F1 scores for multiple models.
 
     Args:
         df: Input dataframe
-        model_sizes: List of model size identifiers
+        model_names: List of model name identifiers (e.g., ['slm', 'llm'] or ['13b', '70b'])
         ground_truth_col: Column name for ground truth
 
     Returns:
         DataFrame with F1 scores added
     """
-    for size in model_sizes:
-        pred_col = f"llama{size}_pred_ans"
-        f1_col = f"llama{size}_f1"
+    for name in model_names:
+        # Support both generic names (slm, llm) and legacy size-based names (13b, 70b)
+        if name in ["slm", "llm"]:
+            pred_col = f"{name}_pred_ans"
+            f1_col = f"{name}_f1"
+        else:
+            # Legacy format for backward compatibility
+            pred_col = f"llama{name}_pred_ans"
+            f1_col = f"llama{name}_f1"
+
         df[f1_col] = df.apply(
             lambda r: compute_f1(r.get(pred_col, None), r.get(ground_truth_col, None)),
             axis=1,
@@ -644,7 +648,6 @@ def run_verification(
         max_tokens=max_tokens,
     )
 
-    print("Inputs prepared, starting verification now.")
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         results = list(
             tqdm(executor.map(verifier_call, verifier_inputs), total=df.shape[0])
@@ -673,7 +676,7 @@ def compute_fraction_correct(lst: List[str]) -> float:
     return correct_count / total_valid
 
 
-def categorize_rows(df: pd.DataFrame) -> pd.DataFrame:
+def categorize_rows(df: pd.DataFrame, slm_column: str = "slm_f1", llm_column: str = "llm_f1") -> pd.DataFrame:
     """
     Categorize rows based on model performance.
 
@@ -684,20 +687,28 @@ def categorize_rows(df: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         df: Input dataframe
+        slm_column: Column name for small model F1 scores (default: "slm_f1")
+        llm_column: Column name for large model F1 scores (default: "llm_f1")
 
     Returns:
         DataFrame with 'category' column added
     """
+    # Support legacy column names if new ones don't exist
+    if slm_column not in df.columns and "llama13b_f1" in df.columns:
+        slm_column = "llama13b_f1"
+    if llm_column not in df.columns and "llama70b_f1" in df.columns:
+        llm_column = "llama70b_f1"
+
     # Calculate 10th percentile values
-    p_10_13b = df["llama13b_f1"].quantile(0.10)
-    p_10_70b = df["llama70b_f1"].quantile(0.10)
+    p_10_slm = df[slm_column].quantile(0.10)
+    p_10_llm = df[llm_column].quantile(0.10)
 
     # Define conditions for each category
     conditions = [
-        (df["llama13b_f1"] <= df["llama70b_f1"])
-        & (df["llama13b_f1"] != df["llama70b_f1"]),
-        (df["llama13b_f1"] == df["llama70b_f1"]) & (df["llama13b_f1"] != 0),
-        (df["llama13b_f1"] <= p_10_13b) & (df["llama70b_f1"] <= p_10_70b),
+        (df[slm_column] <= df[llm_column])
+        & (df[slm_column] != df[llm_column]),
+        (df[slm_column] == df[llm_column]) & (df[slm_column] != 0),
+        (df[slm_column] <= p_10_slm) & (df[llm_column] <= p_10_llm),
     ]
 
     categories = ["NEEDY", "GOOD", "HOPELESS"]
@@ -839,7 +850,6 @@ def solve_queries(
     inputs["llama70b_pred_ans"] = [clean_answer(ans) for ans in results_70b]
 
     inputs_with_predictions = inputs
-    print(f"{len(inputs_with_predictions)}/{len(inputs)} inputs have predictions")
 
     model_sizes = ["13b", "70b"]
     inputs_with_predictions = calculate_f1_for_models(
@@ -847,15 +857,6 @@ def solve_queries(
     )
     inputs_with_predictions = calculate_f1_for_multi_choice(
         inputs_with_predictions, model_sizes
-    )
-
-    print(
-        "result f1 scores: llama13b",
-        inputs_with_predictions[["llama13b_f1"]].mean(),
-    )
-    print(
-        "result f1 scores: llama70b",
-        inputs_with_predictions[["llama70b_f1"]].mean(),
     )
 
     # Prepare save dataframe
@@ -897,7 +898,6 @@ def solve_queries(
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, "router_automix_llamapair_outputs.jsonl")
     save_df.to_json(save_path, lines=True, orient="records", force_ascii=False)
-    print(f"Saved Step1 outputs for Step2: {save_path} | rows={len(save_df)}")
 
     return save_df
 
@@ -943,7 +943,6 @@ def self_verify(
         max_tokens=max_tokens,
         max_workers=max_workers,
     )
-    print(ver_results)
     df["llama13b_ver"] = ver_results
     df["p_ver_13b"] = df["llama13b_ver"].apply(compute_fraction_correct)
 
@@ -961,7 +960,6 @@ def self_verify(
 
     os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
     df.to_json(save_path, lines=True, orient="records")
-    print(f"Saved Step2 outputs: {save_path} | rows={len(df)}")
     return df
 
 
@@ -995,9 +993,6 @@ def prepare_automix_data(
     )
 
     if not skip_step1:
-        print("=" * 60)
-        print("Step 1: Solving queries with small and large models")
-        print("=" * 60)
         solve_queries(
             data_path=input_data_path,
             save_dir=output_dir,
@@ -1006,9 +1001,6 @@ def prepare_automix_data(
         )
 
     if not skip_step2:
-        print("\n" + "=" * 60)
-        print("Step 2: Self-verification and categorization")
-        print("=" * 60)
         df_final = self_verify(
             input_path=step1_output,
             save_path=step2_output,

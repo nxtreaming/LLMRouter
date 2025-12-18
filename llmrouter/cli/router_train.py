@@ -31,7 +31,7 @@ from llmrouter.models import (
     EloRouterTrainer,
     DCTrainer,
     AutomixRouterTrainer,
-    HybridLLMTrainer,
+    HybridLLMTrainer, 
     GraphTrainer,
     CausalLMTrainer,
 )
@@ -52,13 +52,13 @@ ROUTER_TRAINER_REGISTRY: Dict[str, Tuple[Any, Any]] = {
     "routerdc": (DCRouter, DCTrainer),
     "automix": (AutomixRouter, AutomixRouterTrainer),
     "automixrouter": (AutomixRouter, AutomixRouterTrainer),
-    "hybrid_llm": (HybridLLMRouter, HybridLLMTrainer),
+    "hybrid_llm": (HybridLLMRouter, HybridLLMTrainer),      
     "hybridllm": (HybridLLMRouter, HybridLLMTrainer),
     "graphrouter": (GraphRouter, GraphTrainer),
     "causallm_router": (CausalLMRouter, CausalLMTrainer),
     "causallmrouter": (CausalLMRouter, CausalLMTrainer),
     "knnmultiroundrouter": (KNNMultiRoundRouter, KNNMultiRoundRouterTrainer),
-}
+}   
 
 # Routers that do not support training
 UNSUPPORTED_ROUTERS = {
