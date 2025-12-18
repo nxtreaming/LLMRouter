@@ -38,6 +38,270 @@ import torch
 import numpy as np
 
 
+# -----------------------------------------------------------------------------
+# CSS STYLING (UPDATED FOR FORCED LIGHT THEME)
+# -----------------------------------------------------------------------------
+CUSTOM_CSS = """
+/* FORCE LIGHT THEME VARIABLES */
+:root, .gradio-container {
+    --body-background-fill: #f3f4f6; /* Slightly darker grey for better contrast with white cards */
+    --body-text-color: #0f172a;
+    --background-fill-primary: #ffffff;
+    --background-fill-secondary: #f8fafc;
+    --border-color-primary: #e2e8f0;
+    --block-background-fill: #ffffff;
+    --block-border-color: #e2e8f0;
+    --block-label-text-color: #64748b;
+    --block-title-text-color: #1e293b;
+    --input-background-fill: #ffffff;
+    --input-border-color: #cbd5e1;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.gradio-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 24px !important;
+    background: var(--body-background-fill) !important;
+}
+
+/* --- SHARED CARD STYLE --- */
+/* This unifies the look of the Info Panel and the Controls Section */
+.side-panel, .controls-section {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important; /* Modern rounded corners */
+    padding: 24px !important;       /* Consistent padding */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+    margin-bottom: 16px;
+}
+
+/* --- HEADER BAR --- */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.top-bar h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.status-pill {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid #bfdbfe;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.status-pill::before {
+    content: "";
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: #2563eb;
+    border-radius: 50%;
+}
+
+/* --- CHAT AREA --- */
+.main-chat {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.main-chat .bubble-wrap {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+}
+.main-chat .message.user {
+    background-color: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    color: #1e3a8a !important;
+}
+
+/* --- CODE BLOCKS IN CHAT --- */
+/* Style code blocks in chat messages for readability */
+.main-chat pre,
+.main-chat code,
+.message pre,
+.message code {
+    background-color: #f8fafc !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Inline code */
+.main-chat code:not(pre code),
+.message code:not(pre code) {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.9em !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Code blocks (pre) */
+.main-chat pre,
+.message pre {
+    background-color: #f8fafc !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+    overflow-x: auto !important;
+    margin: 8px 0 !important;
+}
+
+/* Code inside pre blocks */
+.main-chat pre code,
+.message pre code {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    color: #1e293b !important;
+}
+
+/* Ensure text in code blocks is always readable */
+.main-chat pre *,
+.message pre *,
+.main-chat code *,
+.message code * {
+    color: #1e293b !important;
+}
+
+/* --- INPUT AREA --- */
+.input-row textarea {
+    border-radius: 12px !important;
+    padding: 14px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    transition: all 0.2s;
+}
+.input-row textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+button.primary {
+    background: #2563eb !important;
+    border-radius: 10px !important;
+    transition: background 0.2s;
+}
+button.primary:hover {
+    background: #1d4ed8 !important;
+}
+
+/* --- SIDE PANEL SPECIFICS (TOP BOX) --- */
+.side-panel h3 {
+    margin: 0 0 16px 0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.side-panel .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed #f1f5f9;
+}
+.side-panel .info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.side-panel .info-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.side-panel .info-value {
+    font-family: 'Monaco', monospace;
+    font-size: 0.85rem;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* --- CONTROLS SPECIFICS (BOTTOM BOX) --- */
+.controls-section {
+    margin-top: 0 !important;
+}
+
+/* Clean up Gradio's default label styling to match our custom header */
+.controls-section span.label-wrap, 
+.controls-section label span {
+    color: #64748b !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* Mode Radio Buttons - Modern Pills */
+.mode-radio {
+    margin-bottom: 16px !important;
+}
+.mode-radio .gradio-radio-group {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.mode-radio label {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    transition: all 0.2s ease;
+    flex-grow: 1;
+    justify-content: center;
+    text-align: center;
+}
+.mode-radio label:hover {
+    border-color: #cbd5e1 !important;
+    background: #ffffff !important;
+}
+.mode-radio label.selected,
+.mode-radio input[type="radio"]:checked + label {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+.mode-radio .circle { display: none !important; } /* Hide the actual radio circle */
+
+/* Sliders */
+input[type=range] {
+    accent-color: #2563eb;
+}
+
+footer { display: none !important; }
+"""
+
 def _safe_unlink(path: str) -> None:
     try:
         os.unlink(path)
@@ -458,9 +722,184 @@ def predict(
         return f"Error: {str(e)}\n{traceback.format_exc()}"
 
 
+def create_interface(router_instance, router_name: str, args):
+    """Create a minimal, focused chat interface."""
+    
+    # Get LLM count for display
+    llm_count = 0
+    if hasattr(router_instance, 'llm_data') and router_instance.llm_data:
+        llm_count = len(router_instance.llm_data)
+    
+    def predict_with_router(message, history, temperature, mode, top_k):
+        return predict(message, history, router_instance, router_name, temperature, mode, top_k)
+    
+    # Use gr.themes.Base() to minimize default styling interference, but Default is also fine with our overrides
+    with gr.Blocks(css=CUSTOM_CSS, theme=gr.themes.Default(), title="LLMRouter") as demo:
+        
+        # Minimal top bar
+        gr.HTML(f"""
+            <div class="top-bar">
+                <h1>LLMRouter</h1>
+                <span class="status-pill">{router_name}</span>
+            </div>
+        """)
+        
+        with gr.Row():
+            # Main chat area - takes most space
+            with gr.Column(scale=4, elem_classes=["main-chat"]):
+                chatbot = gr.Chatbot(
+                    height=560,
+                    show_label=False,
+                    type="messages",
+                    elem_classes=["main-chat"]
+                )
+                
+                with gr.Row(elem_classes=["input-row"]):
+                    msg = gr.Textbox(
+                        placeholder="Type a message...",
+                        show_label=False,
+                        container=False,
+                        scale=5,
+                    )
+                    submit_btn = gr.Button("Send", variant="primary", scale=1)
+                
+                with gr.Row(elem_classes=["action-btns"]):
+                    clear_btn = gr.Button("Clear", size="sm")
+                    retry_btn = gr.Button("Retry", size="sm")
+                    undo_btn = gr.Button("Undo", size="sm")
+            
+            # Compact side panel
+            with gr.Column(scale=1, min_width=200, elem_classes=["side-column"]):
+                gr.HTML(f"""
+                    <div class="side-panel">
+                        <h3>System Info</h3>
+                        <div class="info-row">
+                            <span class="info-label">Active Router</span>
+                            <span class="info-value">{router_name}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Loaded Models</span>
+                            <span class="info-value">{llm_count}</span>
+                        </div>
+                    </div>
+                """)
+                
+                with gr.Column(elem_classes=["controls-section"]):
+                    mode = gr.Radio(
+                        label="Routing Context", # Changed label for better aesthetics
+                        choices=["current_only", "full_context", "retrieval"],
+                        value=args.mode,
+                        container=True,
+                        elem_classes=["mode-radio"],
+                    )
+                    temperature = gr.Slider(
+                        label="Temperature",
+                        minimum=0,
+                        maximum=2,
+                        value=args.temp,
+                        step=0.1,
+                    )
+                    top_k = gr.Slider(
+                        label="Top-K",
+                        minimum=1,
+                        maximum=10,
+                        value=args.top_k,
+                        step=1,
+                        visible=(args.mode == "retrieval"),
+                    )
+        
+        # Event handlers - show user message immediately, then stream response
+        def user_message(message, chat_history):
+            """Add user message immediately and clear input."""
+            if not message.strip():
+                return "", chat_history
+            # Gradio message objects require string content; use empty string as placeholder
+            updated_history = chat_history + [
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": ""},
+            ]
+            return "", updated_history
+        
+        def bot_response(chat_history, temperature, mode, top_k):
+            """Stream the bot response character by character."""
+            if (
+                len(chat_history) < 2
+                or chat_history[-1].get("role") != "assistant"
+                or chat_history[-1].get("content") not in (None, "")
+                or chat_history[-2].get("role") != "user"
+            ):
+                yield chat_history
+                return
+
+            user_msg = chat_history[-2].get("content", "")
+            history_for_router = chat_history[:-1]
+
+            full_response = predict_with_router(user_msg, history_for_router, temperature, mode, top_k)
+
+            partial = ""
+            for char in full_response:
+                partial += char
+                chat_history[-1]["content"] = partial
+                yield chat_history
+        
+        def retry_last(chat_history, temperature, mode, top_k):
+            """Retry the last message with streaming."""
+            if not chat_history:
+                yield chat_history
+                return
+
+            trimmed_history = list(chat_history)
+            if trimmed_history and trimmed_history[-1].get("role") == "assistant":
+                trimmed_history = trimmed_history[:-1]
+
+            if not trimmed_history or trimmed_history[-1].get("role") != "user":
+                yield chat_history
+                return
+
+            last_user_msg = trimmed_history[-1].get("content", "")
+            trimmed_history.append({"role": "assistant", "content": ""})
+            yield trimmed_history
+
+            history_for_router = trimmed_history[:-1]
+            full_response = predict_with_router(last_user_msg, history_for_router, temperature, mode, top_k)
+            partial = ""
+            for char in full_response:
+                partial += char
+                trimmed_history[-1]["content"] = partial
+                yield trimmed_history
+        
+        # Connect events - two-step: show user msg, then stream response
+        msg.submit(user_message, [msg, chatbot], [msg, chatbot], queue=False).then(
+            bot_response, [chatbot, temperature, mode, top_k], chatbot
+        )
+        submit_btn.click(user_message, [msg, chatbot], [msg, chatbot], queue=False).then(
+            bot_response, [chatbot, temperature, mode, top_k], chatbot
+        )
+        clear_btn.click(lambda: [], None, chatbot, queue=False)
+        retry_btn.click(retry_last, [chatbot, temperature, mode, top_k], chatbot)
+        undo_btn.click(
+            lambda h: h[:-2] if len(h) >= 2 and h[-1].get("role") == "assistant" else (h[:-1] if h else h),
+            chatbot,
+            chatbot,
+            queue=False,
+        )
+        mode.change(lambda m: gr.update(visible=(m == "retrieval")), mode, top_k)
+    
+    return demo
+
+
 def main():
     """Main entry point for the chat interface."""
-    parser = argparse.ArgumentParser(description="Chatbot Interface for LLMRouter")
+    parser = argparse.ArgumentParser(
+        description="Chatbot Interface for LLMRouter",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s --router knnrouter --config configs/model_config_test/knnrouter.yaml
+  %(prog)s --router mfrouter --config configs/model_config_test/mfrouter.yaml --mode full_context
+  %(prog)s --router dcrouter --config configs/model_config_test/dcrouter.yaml --share
+        """,
+    )
     parser.add_argument(
         "--router",
         type=str,
@@ -522,50 +961,32 @@ def main():
     if not os.path.exists(args.config):
         raise FileNotFoundError(f"Config file not found: {args.config}")
     
-    # Load router
-    print(f"Loading router: {args.router}")
-    print(f"Using config: {args.config}")
+    # Print startup banner
+    print("\n" + "=" * 60)
+    print("🚀 LLMRouter Chat Interface")
+    print("=" * 60)
+    print(f"  Router:  {args.router}")
+    print(f"  Config:  {args.config}")
+    print(f"  Mode:    {args.mode}")
+    print(f"  Port:    {args.port}")
     if args.load_model_path:
-        print(f"Overriding model path: {args.load_model_path}")
+        print(f"  Model:   {args.load_model_path}")
+    print("=" * 60 + "\n")
     
+    # Load router
+    print("📦 Loading router...")
     router_instance = load_router(args.router, args.config, args.load_model_path)
-    print("✅ Router loaded successfully!")
+    print("✅ Router loaded successfully!\n")
     
-    # Create predict function with router instance bound
-    def predict_with_router(message, history, temperature, mode, top_k):
-        return predict(message, history, router_instance, args.router, temperature, mode, top_k)
-    
-    # Create and launch chat interface
-    interface = gr.ChatInterface(
-        predict_with_router,
-        additional_inputs=[
-            gr.Slider(
-                label="Temperature",
-                minimum=0,
-                maximum=2,
-                value=args.temp,
-                step=0.1,
-            ),
-            gr.Radio(
-                label="Query Mode",
-                choices=["full_context", "current_only", "retrieval"],
-                value=args.mode,
-                info="Full Context: all history + current query | Current Only: single query | Retrieval: top-k similar queries",
-            ),
-            gr.Slider(
-                label="Top-K (Retrieval Mode)",
-                minimum=1,
-                maximum=10,
-                value=args.top_k,
-                step=1,
-                info="Number of similar queries to retrieve (only used in retrieval mode)",
-            ),
-        ],
-        title=f"LLMRouter Chat - {args.router}",
-        description=f"Chat interface using {args.router} router | Mode: {args.mode}",
+    # Create and launch the interface
+    print("🌐 Starting web interface...")
+    demo = create_interface(router_instance, args.router, args)
+    demo.queue().launch(
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        show_error=True,
     )
-    
-    interface.queue().launch(server_name=args.host, server_port=args.port, share=args.share)
 
 
 if __name__ == "__main__":

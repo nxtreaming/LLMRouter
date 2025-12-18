@@ -107,6 +107,25 @@ Input file formats supported: `.txt` (one query per line), `.json` (list of stri
 
 ### Interactive Chat Interface
 
+<div style="text-align:center;">
+    <img src="assets/llmrouter_chat.gif" style="width: 100%; height: auto;">
+</div>
+
+<p align="center">
+    <strong>📱 Quick Preview:</strong> Animated overview of the LLMRouter chat interface showing real-time routing and model selection.
+</p>
+
+<div style="text-align:center;">
+    <video width="100%" controls style="max-width: 800px; height: auto;">
+        <source src="assets/llmrouter_chat_demo.mov" type="video/quicktime">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+<p align="center">
+    <strong>🎥 Full Demo:</strong> Complete walkthrough demonstrating the interactive chat interface, including query routing, model selection, and response generation.
+</p>
+
 Launch a Gradio-based chat interface:
 ```bash
 # Basic chat interface
