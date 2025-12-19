@@ -160,6 +160,147 @@ python -m llmrouter.cli.router_inference --router knnrouter --config config.yaml
 python -m llmrouter.cli.router_chat --router knnrouter --config config.yaml
 ```
 
+## 🔧 Creating Custom Routers
+
+LLMRouter supports a **plugin system** that allows you to add custom router implementations without modifying the core codebase. This makes it easy to experiment with new routing strategies or domain-specific routers.
+
+### Quick Start
+
+**1. Create your router directory:**
+```bash
+mkdir -p custom_routers/my_router
+```
+
+**2. Implement your router** (`custom_routers/my_router/router.py`):
+```python
+from llmrouter.models.meta_router import MetaRouter
+import torch.nn as nn
+
+class MyRouter(MetaRouter):
+    """Your custom router implementation."""
+
+    def __init__(self, yaml_path: str):
+        # Initialize with a model (can be nn.Identity() for simple routers)
+        model = nn.Identity()
+        super().__init__(model=model, yaml_path=yaml_path)
+
+        # Get available LLM names from config
+        self.llm_names = list(self.llm_data.keys())
+
+    def route_single(self, query_input: dict) -> dict:
+        """Route a single query to the best LLM."""
+        query = query_input['query']
+
+        # Your custom routing logic here
+        # Example: route based on query length
+        selected_llm = (self.llm_names[0] if len(query) < 50
+                       else self.llm_names[-1])
+
+        return {
+            "query": query,
+            "model_name": selected_llm,
+            "predicted_llm": selected_llm,
+        }
+
+    def route_batch(self, batch: list) -> list:
+        """Route multiple queries."""
+        return [self.route_single(q) for q in batch]
+```
+
+**3. Create configuration** (`custom_routers/my_router/config.yaml`):
+```yaml
+data_path:
+  llm_data: 'data/example_data/llm_candidates/default_llm.json'
+
+hparam:
+  # Your hyperparameters here
+
+api_endpoint: 'https://integrate.api.nvidia.com/v1'
+```
+
+**4. Use your custom router** (same as built-in routers!):
+```bash
+# Inference
+llmrouter infer --router my_router \
+  --config custom_routers/my_router/config.yaml \
+  --query "What is machine learning?"
+
+# List all routers (including custom ones)
+llmrouter list-routers
+```
+
+### Plugin Discovery
+
+Custom routers are automatically discovered from:
+- `./custom_routers/` (recommended - project directory)
+- `~/.llmrouter/plugins/` (user home directory)
+- `$LLMROUTER_PLUGINS` environment variable (colon-separated paths)
+
+### Example Routers
+
+LLMRouter includes example custom routers you can learn from:
+
+**RandomRouter** - Simple baseline that randomly selects an LLM
+```bash
+llmrouter infer --router randomrouter \
+  --config custom_routers/randomrouter/config.yaml \
+  --query "Hello world"
+```
+
+**ThresholdRouter** - Advanced trainable router with difficulty estimation
+```bash
+# Train the router
+llmrouter train --router thresholdrouter \
+  --config custom_routers/thresholdrouter/config.yaml
+
+# Use for inference
+llmrouter infer --router thresholdrouter \
+  --config custom_routers/thresholdrouter/config.yaml \
+  --query "Explain quantum computing"
+```
+
+### Documentation
+
+For detailed guides on creating custom routers:
+- 📖 **Quick Start**: [custom_routers/README.md](custom_routers/README.md)
+- 📖 **Detailed Tutorial**: [docs/CUSTOM_ROUTERS.md](docs/CUSTOM_ROUTERS.md)
+- 📖 **Complete Guide**: [PLUGIN_SYSTEM_GUIDE.md](PLUGIN_SYSTEM_GUIDE.md)
+
+### Common Routing Patterns
+
+**Rule-based routing:**
+```python
+def route_single(self, query_input):
+    query = query_input['query'].lower()
+    if 'code' in query:
+        return {"model_name": "code-specialist"}
+    elif len(query) < 50:
+        return {"model_name": "small-fast-model"}
+    else:
+        return {"model_name": "large-capable-model"}
+```
+
+**Embedding-based routing:**
+```python
+from llmrouter.utils import get_longformer_embedding
+
+def route_single(self, query_input):
+    embedding = get_longformer_embedding(query_input['query'])
+    # Use embedding similarity to select best model
+    selected = self._find_best_model(embedding)
+    return {"model_name": selected}
+```
+
+**Cost-optimized routing:**
+```python
+def route_single(self, query_input):
+    difficulty = self._estimate_difficulty(query_input)
+    # Select cheapest model that can handle the difficulty
+    for model_name, info in sorted(self.llm_data.items(),
+                                   key=lambda x: x[1]['cost']):
+        if info['capability'] >= difficulty:
+            return {"model_name": model_name}
+```
 
 ## Star History
 
