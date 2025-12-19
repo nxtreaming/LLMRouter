@@ -1,37 +1,37 @@
-# Custom Router 插件系统 - 实现总结
+# Custom Router Plugin System - Implementation Summary
 
-## 🎯 实现目标
+## 🎯 Implementation Goal
 
-让用户可以**添加自定义 router 而不修改原有代码结构**。
+Enable users to **add custom router implementations without modifying the core codebase**.
 
-## ✅ 已完成的工作
+## ✅ Completed Work
 
-### 1. 核心插件系统
+### 1. Core Plugin System
 
-**新增文件：** `llmrouter/plugin_system.py`
+**New File:** `llmrouter/plugin_system.py`
 
-**功能：**
-- 🔍 自动发现自定义 router
-- ✅ 验证 router 实现
-- 📦 注册到系统中
-- 🔧 支持多种发现策略
+**Features:**
+- 🔍 Automatic discovery of custom routers
+- ✅ Validation of router implementations
+- 📦 Registration into the system
+- 🔧 Support for multiple discovery strategies
 
-**关键类：**
+**Key Classes:**
 ```python
 class PluginRegistry:
-    - discover_plugins(plugin_dir, verbose)  # 发现插件
-    - _load_router_from_directory()          # 加载 router
-    - _validate_router_class()               # 验证接口
-    - register_to_dict()                     # 注册到字典
+    - discover_plugins(plugin_dir, verbose)  # Discover plugins
+    - _load_router_from_directory()          # Load router
+    - _validate_router_class()               # Validate interface
+    - register_to_dict()                     # Register to dictionary
 ```
 
-### 2. CLI 集成
+### 2. CLI Integration
 
-**修改文件：**
-- `llmrouter/cli/router_inference.py` (推理)
-- `llmrouter/cli/router_train.py` (训练)
+**Modified Files:**
+- `llmrouter/cli/router_inference.py` (inference)
+- `llmrouter/cli/router_train.py` (training)
 
-**修改内容：** 添加插件发现和注册代码段
+**Modifications:** Added plugin discovery and registration code
 
 ```python
 # ============================================================================
@@ -46,118 +46,118 @@ for router_name, router_class in plugin_registry.discovered_routers.items():
 # ============================================================================
 ```
 
-### 3. 示例 Router
+### 3. Example Routers
 
-#### RandomRouter（简单示例）
+#### RandomRouter (Simple Example)
 - 📁 `custom_routers/randomrouter/`
-- 功能：随机选择 LLM
-- 用途：基线对比
+- Function: Randomly select LLM
+- Use: Baseline comparison
 
-#### ThresholdRouter（高级示例）
+#### ThresholdRouter (Advanced Example)
 - 📁 `custom_routers/thresholdrouter/`
-- 功能：基于难度估计路由
-- 特点：包含完整训练流程
+- Function: Route based on difficulty estimation
+- Features: Complete training pipeline
 
-### 4. 完整文档
+### 4. Complete Documentation
 
-- 📖 `docs/CUSTOM_ROUTERS.md` - 详细教程
-- 📖 `custom_routers/README.md` - 快速开始
-- 📖 `PLUGIN_SYSTEM_GUIDE.md` - 完整指南
+- 📖 `docs/CUSTOM_ROUTERS.md` - Detailed tutorial
+- 📖 `custom_routers/README.md` - Quick start
+- 📖 `PLUGIN_SYSTEM_GUIDE.md` - Complete guide
 
 ---
 
-## 📂 完整文件结构
+## 📂 Complete File Structure
 
 ```
 LLMRouter/
 │
 ├── llmrouter/
-│   ├── plugin_system.py              ⭐ NEW - 插件系统核心
+│   ├── plugin_system.py              ⭐ NEW - Plugin system core
 │   ├── cli/
-│   │   ├── router_inference.py       🔧 MODIFIED - 集成插件
-│   │   └── router_train.py           🔧 MODIFIED - 集成插件
+│   │   ├── router_inference.py       🔧 MODIFIED - Integrated plugins
+│   │   └── router_train.py           🔧 MODIFIED - Integrated plugins
 │   └── models/
-│       └── meta_router.py            原有基类
+│       └── meta_router.py            Existing base class
 │
-├── custom_routers/                   ⭐ NEW - 自定义 router 目录
+├── custom_routers/                   ⭐ NEW - Custom router directory
 │   ├── __init__.py
-│   ├── README.md                     ⭐ NEW - 使用说明
+│   ├── README.md                     ⭐ NEW - Usage guide
 │   │
-│   ├── randomrouter/                 ⭐ NEW - 示例 1
+│   ├── randomrouter/                 ⭐ NEW - Example 1
 │   │   ├── __init__.py
-│   │   ├── router.py                 随机路由实现
-│   │   ├── trainer.py                训练器（no-op）
-│   │   └── config.yaml               配置示例
+│   │   ├── router.py                 Random routing implementation
+│   │   ├── trainer.py                Trainer (no-op)
+│   │   └── config.yaml               Config example
 │   │
-│   └── thresholdrouter/              ⭐ NEW - 示例 2
+│   └── thresholdrouter/              ⭐ NEW - Example 2
 │       ├── __init__.py
-│       ├── router.py                 难度估计路由
-│       ├── trainer.py                完整训练器
-│       └── config.yaml               (可选)
+│       ├── router.py                 Difficulty estimation router
+│       ├── trainer.py                Complete trainer
+│       └── config.yaml               (optional)
 │
 ├── docs/
-│   └── CUSTOM_ROUTERS.md             ⭐ NEW - 详细文档
+│   └── CUSTOM_ROUTERS.md             ⭐ NEW - Detailed docs
 │
-├── PLUGIN_SYSTEM_GUIDE.md            ⭐ NEW - 完整指南
-└── test_plugin_system.py             ⭐ NEW - 测试脚本
+├── PLUGIN_SYSTEM_GUIDE.md            ⭐ NEW - Complete guide
+└── tests/test_plugin_system.py       ⭐ NEW - Test script
 ```
 
 ---
 
-## 🔑 核心设计
+## 🔑 Core Design
 
-### 1. 插件发现机制
+### 1. Plugin Discovery Mechanism
 
-**自动搜索路径：**
+**Automatic Search Paths:**
 ```
-1. ./custom_routers/          (项目目录，推荐)
-2. ~/.llmrouter/plugins/      (用户目录)
-3. $LLMROUTER_PLUGINS         (环境变量)
+1. ./custom_routers/          (project directory, recommended)
+2. ~/.llmrouter/plugins/      (user directory)
+3. $LLMROUTER_PLUGINS         (environment variable)
 ```
 
-**发现策略：**
-- 扫描子目录
-- 查找 `router.py` 或 `model.py`
-- 寻找以 `Router` 结尾的类
-- 可选加载 `trainer.py` 中的 `Trainer` 类
+**Discovery Strategy:**
+- Scan subdirectories
+- Look for `router.py` or `model.py`
+- Find classes ending with `Router`
+- Optionally load `Trainer` class from `trainer.py`
 
-### 2. Router 接口要求
+### 2. Router Interface Requirements
 
-**必须实现：**
+**Must Implement:**
 ```python
 class YourRouter(MetaRouter):
     def __init__(self, yaml_path: str):
         super().__init__(model=..., yaml_path=yaml_path)
 
     def route_single(self, query_input: dict) -> dict:
-        # 返回包含 'model_name' 的字典
+        # Return dict containing 'model_name'
         pass
 
     def route_batch(self, batch: list) -> list:
-        # 返回结果列表
+        # Return list of results
         pass
 ```
 
-**可选实现（支持训练）：**
+**Optional (for training support):**
 ```python
 class YourRouterTrainer(BaseTrainer):
     def train(self) -> None:
-        # 训练逻辑
+        # Training logic
         pass
 ```
 
-### 3. 零侵入集成
+### 3. Zero-Invasive Integration
 
-**原理：**
-- 使用 Python 的动态导入
-- 在运行时注册到现有的 `ROUTER_REGISTRY`
-- 对原有代码零修改（仅添加集成代码段）
+**Principle:**
+- Use Python's dynamic imports
+- Register to existing `ROUTER_REGISTRY` at runtime
+- Zero modifications to existing code (only integration code added)
 
 ---
 
-## 💻 使用示例
+## 💻 Usage Examples
 
-### 创建自定义 Router
+### Creating a Custom Router
 
 ```python
 # custom_routers/my_router/router.py
@@ -171,13 +171,13 @@ class MyRouter(MetaRouter):
         self.llm_names = list(self.llm_data.keys())
 
     def route_single(self, query_input: dict) -> dict:
-        # 简单示例：根据查询长度路由
+        # Simple example: route based on query length
         query = query_input['query']
 
         if len(query) < 50:
-            selected = self.llm_names[0]  # 短查询 -> 小模型
+            selected = self.llm_names[0]  # Short query -> small model
         else:
-            selected = self.llm_names[-1]  # 长查询 -> 大模型
+            selected = self.llm_names[-1]  # Long query -> large model
 
         return {
             "query": query,
@@ -189,27 +189,27 @@ class MyRouter(MetaRouter):
         return [self.route_single(q) for q in batch]
 ```
 
-### 使用自定义 Router
+### Using Custom Router
 
 ```bash
-# 推理
+# Inference
 llmrouter infer --router my_router \
   --config custom_routers/my_router/config.yaml \
   --query "What is machine learning?"
 
-# 训练（如果有 trainer）
+# Training (if has trainer)
 llmrouter train --router my_router \
   --config custom_routers/my_router/config.yaml
 
-# 查看所有可用 router
+# List all routers
 llmrouter list-routers
 ```
 
 ---
 
-## 🎨 设计模式示例
+## 🎨 Design Pattern Examples
 
-### 1. 基于规则的路由
+### 1. Rule-Based Routing
 ```python
 def route_single(self, query_input):
     query = query_input['query'].lower()
@@ -222,7 +222,7 @@ def route_single(self, query_input):
         return {"model_name": "large-model"}
 ```
 
-### 2. 基于嵌入的路由
+### 2. Embedding-Based Routing
 ```python
 from llmrouter.utils import get_longformer_embedding
 
@@ -233,36 +233,36 @@ def route_single(self, query_input):
     return {"model_name": best_model}
 ```
 
-### 3. 基于成本优化的路由
+### 3. Cost-Optimized Routing
 ```python
 def route_single(self, query_input):
     difficulty = self._estimate_difficulty(query_input)
 
-    # 选择能胜任且成本最低的模型
+    # Select cheapest model that can handle the difficulty
     for model in sorted(self.llm_data.items(), key=lambda x: x[1]['cost']):
         if model[1]['capability'] >= difficulty:
             return {"model_name": model[0]}
 ```
 
-### 4. 集成路由（Ensemble）
+### 4. Ensemble Routing
 ```python
 def route_single(self, query_input):
-    # 多个子路由器投票
+    # Get predictions from multiple sub-routers
     votes = [r.route_single(query_input) for r in self.sub_routers]
 
-    # 多数投票
+    # Majority voting
     from collections import Counter
-    model_votes = Counter(v['model_name'] for v in votes)
-    winner = model_votes.most_common(1)[0][0]
+    model_counts = Counter(v['model_name'] for v in votes)
+    best_model = model_counts.most_common(1)[0][0]
 
-    return {"model_name": winner}
+    return {"model_name": best_model}
 ```
 
 ---
 
-## 🧪 测试方法
+## 🧪 Testing Methods
 
-### 1. 单元测试
+### 1. Unit Testing
 ```python
 from custom_routers.my_router import MyRouter
 
@@ -271,83 +271,83 @@ result = router.route_single({"query": "test"})
 assert "model_name" in result
 ```
 
-### 2. 集成测试
+### 2. Integration Testing
 ```bash
-# 仅路由测试
+# Route-only test
 llmrouter infer --router my_router \
   --config config.yaml \
   --query "test" \
   --route-only
 
-# 完整测试（包含 API 调用）
+# Complete test (including API call)
 llmrouter infer --router my_router \
   --config config.yaml \
   --query "test" \
   --verbose
 ```
 
-### 3. 调试模式
+### 3. Debug Mode
 ```python
 from llmrouter.plugin_system import discover_and_register_plugins
 
 registry = discover_and_register_plugins(
     plugin_dirs=['custom_routers'],
-    verbose=True  # 显示详细发现过程
+    verbose=True  # Show detailed discovery process
 )
 ```
 
 ---
 
-## 🌟 关键优势
+## 🌟 Key Advantages
 
-### 1. 零侵入
-- ✅ 不修改核心代码
-- ✅ 只添加集成代码段（5-10行）
-- ✅ 原有功能完全不受影响
+### 1. Zero-Invasive
+- ✅ No core code modifications
+- ✅ Only integration code added (5-10 lines)
+- ✅ Existing functionality completely unaffected
 
-### 2. 自动化
-- ✅ 自动发现
-- ✅ 自动验证
-- ✅ 自动注册
+### 2. Automation
+- ✅ Automatic discovery
+- ✅ Automatic validation
+- ✅ Automatic registration
 
-### 3. 灵活性
-- ✅ 支持多种发现路径
-- ✅ 支持训练和推理
-- ✅ 支持复杂 router 实现
+### 3. Flexibility
+- ✅ Multiple discovery paths supported
+- ✅ Both training and inference supported
+- ✅ Complex router implementations supported
 
-### 4. 易用性
-- ✅ 与内置 router 使用方式完全一致
-- ✅ 丰富的示例和文档
-- ✅ 清晰的错误提示
-
----
-
-## 📊 代码统计
-
-### 新增代码
-- `llmrouter/plugin_system.py`: ~400 行
-- CLI 集成代码: ~30 行（总共）
-- 示例 router: ~600 行
-- 文档: ~1000 行
-
-### 修改代码
-- `router_inference.py`: +15 行
-- `router_train.py`: +15 行
-
-### 总计
-- 新增: ~2000 行
-- 修改: ~30 行
-- 侵入性: **极低**
+### 4. Ease of Use
+- ✅ Same usage as built-in routers
+- ✅ Rich examples and documentation
+- ✅ Clear error messages
 
 ---
 
-## 🚀 使用流程总结
+## 📊 Code Statistics
+
+### New Code
+- `llmrouter/plugin_system.py`: ~400 lines
+- CLI integration code: ~30 lines (total)
+- Example routers: ~600 lines
+- Documentation: ~1000 lines
+
+### Modified Code
+- `router_inference.py`: +15 lines
+- `router_train.py`: +15 lines
+
+### Total
+- New: ~2000 lines
+- Modified: ~30 lines
+- Invasiveness: **Very Low**
+
+---
+
+## 🚀 Usage Flow Summary
 
 ```bash
-# Step 1: 创建 router 目录
+# Step 1: Create router directory
 mkdir -p custom_routers/awesome_router
 
-# Step 2: 实现 router
+# Step 2: Implement router
 cat > custom_routers/awesome_router/router.py << 'EOF'
 from llmrouter.models.meta_router import MetaRouter
 import torch.nn as nn
@@ -358,7 +358,7 @@ class AwesomeRouter(MetaRouter):
         self.llm_names = list(self.llm_data.keys())
 
     def route_single(self, query_input: dict) -> dict:
-        # 你的路由逻辑
+        # Your routing logic
         return {
             "query": query_input['query'],
             "model_name": self.llm_names[0],
@@ -369,14 +369,14 @@ class AwesomeRouter(MetaRouter):
         return [self.route_single(q) for q in batch]
 EOF
 
-# Step 3: 创建配置
+# Step 3: Create configuration
 cat > custom_routers/awesome_router/config.yaml << 'EOF'
 data_path:
   llm_data: 'data/example_data/llm_candidates/default_llm.json'
 api_endpoint: 'https://integrate.api.nvidia.com/v1'
 EOF
 
-# Step 4: 使用！
+# Step 4: Use it!
 llmrouter infer --router awesome_router \
   --config custom_routers/awesome_router/config.yaml \
   --query "Hello, world!"
@@ -384,54 +384,54 @@ llmrouter infer --router awesome_router \
 
 ---
 
-## 📚 文档索引
+## 📚 Documentation Index
 
-1. **快速开始**: `custom_routers/README.md`
-2. **详细教程**: `docs/CUSTOM_ROUTERS.md`
-3. **完整指南**: `PLUGIN_SYSTEM_GUIDE.md`
-4. **API 文档**: `llmrouter/plugin_system.py` 内联文档
-
----
-
-## 🎓 推荐学习路径
-
-1. 📖 阅读 `custom_routers/README.md`
-2. 🔍 查看 `RandomRouter` 示例（最简单）
-3. 💡 理解 `ThresholdRouter` 示例（可训练）
-4. 🛠️ 创建自己的简单 router
-5. 📈 逐步增加复杂功能
-6. 🚀 分享给社区
+1. **Quick Start**: `custom_routers/README.md`
+2. **Detailed Tutorial**: `docs/CUSTOM_ROUTERS.md`
+3. **Complete Guide**: `PLUGIN_SYSTEM_GUIDE.md`
+4. **API Documentation**: Inline documentation in `llmrouter/plugin_system.py`
 
 ---
 
-## ✅ 验证清单
+## 🎓 Recommended Learning Path
 
-- [x] 插件系统核心实现
-- [x] CLI 集成
-- [x] 简单示例 router (RandomRouter)
-- [x] 高级示例 router (ThresholdRouter)
-- [x] 完整文档
-- [x] 使用指南
-- [x] 测试脚本
-- [x] 零侵入性验证
+1. 📖 Read `custom_routers/README.md`
+2. 🔍 Check `RandomRouter` example (simplest)
+3. 💡 Understand `ThresholdRouter` example (trainable)
+4. 🛠️ Create your own simple router
+5. 📈 Gradually add complex features
+6. 🚀 Share with the community
 
 ---
 
-## 🎉 总结
+## ✅ Verification Checklist
 
-通过这个插件系统，用户现在可以：
-
-1. ✅ **轻松扩展** - 创建自定义 router 只需几分钟
-2. ✅ **无缝集成** - 使用方式与内置 router 完全一致
-3. ✅ **灵活部署** - 支持多种发现路径和配置方式
-4. ✅ **快速迭代** - 无需修改核心代码，快速实验新想法
-
-**核心价值：** 让 LLMRouter 成为一个真正可扩展的框架！🚀
+- [x] Plugin system core implementation
+- [x] CLI integration
+- [x] Simple example router (RandomRouter)
+- [x] Advanced example router (ThresholdRouter)
+- [x] Complete documentation
+- [x] Usage guide
+- [x] Test script
+- [x] Zero-invasive verification
 
 ---
 
-## 📞 支持
+## 🎉 Summary
+
+With this plugin system, users can now:
+
+1. ✅ **Easy Extension** - Create custom routers in minutes
+2. ✅ **Seamless Integration** - Usage identical to built-in routers
+3. ✅ **Flexible Deployment** - Multiple discovery paths and configuration
+4. ✅ **Rapid Iteration** - No core code changes, quick experimentation
+
+**Core Value:** Making LLMRouter a truly extensible framework! 🚀
+
+---
+
+## 📞 Support
 
 - GitHub Issues: https://github.com/ulab-uiuc/LLMRouter/issues
-- 示例代码: `custom_routers/`
-- 详细文档: `docs/CUSTOM_ROUTERS.md`
+- Example Code: `custom_routers/`
+- Detailed Docs: `docs/CUSTOM_ROUTERS.md`
