@@ -53,3 +53,6 @@ routing_log.jsonl
 # Temporary files
 *.tmp
 .cache/
+
+# MkDocs build output
+site/
