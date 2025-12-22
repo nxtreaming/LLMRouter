@@ -7,7 +7,7 @@ import copy
 from sklearn.preprocessing import MinMaxScaler
 
 from llmrouter.models.meta_router import MetaRouter
-from llmrouter.utils import get_longformer_embedding
+from llmrouter.utils import get_longformer_embedding, call_api, generate_task_query, calculate_task_performance
 from .graph_nn import FormData, GNNPredictor
 
 
@@ -323,9 +323,25 @@ class GraphRouter(MetaRouter):
         query_output["model_name"] = model_name
         return query_output
 
-    def route_batch(self, batch: Optional[Any] = None) -> List[Dict[str, Any]]:
+    def route_batch(self, batch: Optional[Any] = None, task_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Route a batch of queries using the trained GNN model.
+        Route a batch of queries using the trained GNN model and execute them.
+
+        This method performs end-to-end processing:
+        1. Routes queries using GNN to get the best model for each
+        2. Applies task-specific prompt formatting if task_name is provided
+        3. Calls the routed model via API to get response
+        4. Calculates performance metrics if ground truth is available
+
+        Args:
+            batch (Any, optional):
+                If provided, routes the provided batch. If None, uses self.query_data_test from loaded data.
+            task_name (str, optional):
+                Task name for prompt formatting (e.g., "mmlu", "gsm8k", "commonsense_qa").
+
+        Returns:
+            list of dict:
+                A list of query dictionaries with response, tokens, and performance metrics.
         """
         # Load trained model
         load_model_path = self._get_model_path('load_model_path')
@@ -333,12 +349,23 @@ class GraphRouter(MetaRouter):
             state_dict = torch.load(load_model_path, map_location='cpu')
             self.gnn_predictor.model.load_state_dict(state_dict)
 
-        query_data_output = copy.copy(self.query_data_test)
+        # Determine which data to use
+        if batch is not None:
+            query_data = batch if isinstance(batch, list) else [batch]
+        else:
+            if hasattr(self, "query_data_test") and self.query_data_test is not None:
+                query_data = copy.copy(self.query_data_test)
+            else:
+                print("Warning: No batch provided and no test data available for batch routing.")
+                return []
 
         # Prepare test embeddings
         test_embeddings = []
-        for row in query_data_output:
-            embedding = get_longformer_embedding(row["query"]).numpy()
+        for row in query_data:
+            if isinstance(row, dict):
+                embedding = get_longformer_embedding(row.get("query", "")).numpy()
+            else:
+                embedding = get_longformer_embedding(str(row)).numpy()
             test_embeddings.append(embedding)
         test_embeddings = np.array(test_embeddings)
 
@@ -390,16 +417,95 @@ class GraphRouter(MetaRouter):
             test_mask=mask_test
         )
 
-        # Predict
+        # Predict using GNN
         predicted_idx = self.gnn_predictor.predict(test_data)
 
         # Get test query predictions
         test_predictions = predicted_idx[-num_test_queries:]
 
-        # Update output
-        for i, row in enumerate(query_data_output):
+        # Get API endpoint from config
+        api_endpoint = self.cfg.get("api_endpoint", "https://integrate.api.nvidia.com/v1")
+
+        # Now execute each query with the routed model
+        query_data_output = []
+        for i, row in enumerate(query_data):
+            # Handle both dict and non-dict inputs
+            if isinstance(row, dict):
+                row_copy = copy.copy(row)
+                original_query = row_copy.get("query", "")
+                row_task_name = row_copy.get("task_name", task_name)
+            else:
+                row_copy = {"query": str(row)}
+                original_query = str(row)
+                row_task_name = task_name
+
+            # Step 1: Get routed model name
             model_idx = test_predictions[i].item()
-            row["model_name"] = self.model_names[model_idx]
+            model_name = self.model_names[model_idx]
+            row_copy["model_name"] = model_name
+
+            # Step 2: Format query if task_name is provided
+            if row_task_name:
+                try:
+                    sample_data = {
+                        "query": original_query,
+                        "choices": row_copy.get("choices", None) if isinstance(row_copy, dict) else None
+                    }
+                    formatted_query = generate_task_query(row_task_name, sample_data)
+                    row_copy["formatted_query"] = formatted_query
+                    query_text_for_execution = formatted_query
+                except (ValueError, KeyError) as e:
+                    print(f"Warning: Failed to format query with task '{row_task_name}': {e}. Using original query.")
+                    query_text_for_execution = original_query
+            else:
+                query_text_for_execution = original_query
+
+            # Step 3: Call API to get response
+            api_model_name = model_name
+            if hasattr(self, 'llm_data') and self.llm_data and model_name in self.llm_data:
+                api_model_name = self.llm_data[model_name].get("model", model_name)
+
+            request = {
+                "api_endpoint": api_endpoint,
+                "query": query_text_for_execution,
+                "model_name": model_name,
+                "api_name": api_model_name
+            }
+
+            try:
+                result = call_api(request, max_tokens=1024, temperature=0.7)
+                response = result.get("response", "")
+                prompt_tokens = result.get("prompt_tokens", 0)
+                completion_tokens = result.get("completion_tokens", 0)
+                success = "error" not in result
+            except Exception as e:
+                print(f"Error calling API for query: {e}")
+                response = ""
+                prompt_tokens = 0
+                completion_tokens = 0
+                success = False
+
+            row_copy["response"] = response
+            row_copy["prompt_tokens"] = prompt_tokens
+            row_copy["completion_tokens"] = completion_tokens
+            row_copy["input_token"] = prompt_tokens
+            row_copy["output_token"] = completion_tokens
+            row_copy["success"] = success
+
+            # Step 4: Calculate task performance if ground truth is available
+            ground_truth = row_copy.get("ground_truth") or row_copy.get("gt") or row_copy.get("answer")
+            metric = row_copy.get("metric")
+            if ground_truth:
+                task_performance = calculate_task_performance(
+                    prediction=response,
+                    ground_truth=ground_truth,
+                    task_name=row_task_name,
+                    metric=metric
+                )
+                if task_performance is not None:
+                    row_copy["task_performance"] = task_performance
+
+            query_data_output.append(row_copy)
 
         return query_data_output
 
