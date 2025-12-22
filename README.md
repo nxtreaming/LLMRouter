@@ -46,6 +46,8 @@
 |--------|:--------:|:---------:|-------------|
 | `router_r1` | N/A | ✅ | Pre-trained Router-R1 model for multi-turn conversations |
 
+For more details about training, please refer to [Router-R1](https://github.com/ulab-uiuc/Router-R1).
+
 ### Agentic Routers
 | Router | Training | Inference | Description |
 |--------|:--------:|:---------:|-------------|
