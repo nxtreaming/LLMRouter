@@ -18,10 +18,7 @@ train:
   id: llmrouter_gmt                 # Experiment identifier
   epochs: 350                       # Number of training epochs
   lr: 5e-4                          # Learning rate (5e-4 recommended)
-  record_per_user: 10               # Minimum interactions per user
   prediction_count: 256             # Number of predictions per batch
-  multi_turn: false                 # Enable multi-turn conversation mode
-  aggregation_type: mean            # Aggregation: mean, max, attention
   objective: auc                    # Objective: auc or accuracy
   binary: true                      # Binary classification (pairwise comparison)
   eval_every: 5                     # Evaluate every N epochs
@@ -42,17 +39,11 @@ gmt_config:
 
   # Personalization
   personalization: true             # Enable user preference learning
-  record_per_user: 10               # Minimum records per user to learn preferences
 
-  # Node types (fixed in GMTRouter architecture)
-  # - User: User preference embeddings (learned)
-  # - Session: Conversation session representations (learned)
-  # - Query: Query text embeddings (from PLM)
-  # - LLM: Model embeddings (from PLM)
-  # - Response: Response quality (rating-based)
-
-  # Edge types: 21 types in HeteroEdges enum
-  # Including: own, owned_by, answered_by, answered_to, next, prev, etc.
+  # Note: GMTRouter architecture is fixed with:
+  # - 5 Node types: User, Session, Query, LLM, Response
+  # - 21 Edge types: Including own, owned_by, answered_by, answered_to, next, prev, etc.
+  # See llmrouter/models/gmtrouter/data_loader.py for details
 
 # Data paths (for LLMRouter integration)
 data_path:

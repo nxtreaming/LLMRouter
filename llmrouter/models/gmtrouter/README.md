@@ -184,17 +184,16 @@ dataset:
 train:
   epochs: 350             # Training epochs
   lr: 5e-4                # Learning rate (5e-4 recommended)
-  record_per_user: 10     # Min interactions per user
   prediction_count: 256   # Pairwise predictions per batch
-  multi_turn: false       # Enable multi-turn mode
   objective: auc          # Metric: auc or accuracy
   binary: true            # Pairwise comparison learning
   eval_every: 5           # Validation frequency
+  seed: 136               # Random seed
 
 gmt_config:
   num_gnn_layers: 2       # HGT layers (2 for single-turn, 3 for multi-turn)
-  hidden_dim: 128         # Hidden dimension
-  dropout: 0.1            # Dropout rate
+  hidden_dim: 128         # Hidden dimension for node embeddings
+  dropout: 0.1            # Dropout rate for regularization
   personalization: true   # Enable user preference learning
 
 checkpoint:
@@ -337,53 +336,52 @@ router.update_user_feedback(
 ### GMTRouter-Specific (`gmt_config`)
 
 - **`num_gnn_layers`** (int, default: `2`)
-  - Number of HGT layers in HeteroGNN
-  - Use 2 for single-turn, 3 for multi-turn
+  - Number of HGT (Heterogeneous Graph Transformer) layers in HeteroGNN
+  - Recommended: 2 layers for most tasks
   - Range: 2-4
 
 - **`hidden_dim`** (int, default: `128`)
-  - Hidden dimension for graph embeddings
+  - Hidden dimension for graph node embeddings
   - Range: 64-256
 
 - **`dropout`** (float, default: `0.1`)
-  - Dropout rate for regularization
+  - Dropout rate for regularization during training
   - Range: 0.0-0.3
 
 - **`personalization`** (bool, default: `true`)
   - Enable user preference learning
-  - Requires `user_id` in queries
-
-- **`record_per_user`** (int, default: `10`)
-  - Minimum interactions per user
-  - Users with fewer interactions use fallback routing
-
-- **`multi_turn`** (bool, default: `false`)
-  - Enable multi-turn conversation mode
-  - Increases GNN layers to 3
-
-- **`aggregation_type`** (string, default: `"mean"`)
-  - How to aggregate conversation history
-  - Options: `"mean"`, `"max"`, `"attention"`
+  - When enabled, requires `user_id` field in routing queries
+  - Learns per-user embeddings that evolve with interactions
 
 ### Training Parameters (`train`)
 
 - **`epochs`** (int, default: `350`)
   - Number of training epochs
+  - GMTRouter typically converges in 200-350 epochs
 
 - **`lr`** (float, default: `5e-4`)
-  - Learning rate (5e-4 recommended)
+  - Learning rate for optimizer
+  - Recommended: 5e-4 (works well for most datasets)
 
 - **`prediction_count`** (int, default: `256`)
-  - Number of pairwise predictions per batch
+  - Number of pairwise preference predictions per training batch
+  - Higher values provide more stable gradients but slower training
 
 - **`objective`** (string, default: `"auc"`)
-  - Training objective: `"auc"` or `"accuracy"`
+  - Training objective metric
+  - Options: `"auc"` (Area Under Curve) or `"accuracy"`
 
 - **`binary`** (bool, default: `true`)
-  - Use pairwise comparison (binary classification)
+  - Use pairwise preference learning (binary classification)
+  - Recommended to keep as `true` for preference-based routing
 
 - **`eval_every`** (int, default: `5`)
-  - Validation frequency (epochs)
+  - Validation frequency in epochs
+  - Model is evaluated on validation set every N epochs
+
+- **`seed`** (int, default: `136`)
+  - Random seed for reproducibility
+  - Ensures consistent results across training runs
 
 ## Advantages
 
@@ -457,7 +455,7 @@ pip install torch-geometric==2.6.1
 
 ### Issue: "User not found - using fallback routing"
 
-**Solution**: This is normal for new users. The router will learn preferences after `record_per_user` interactions (default: 10).
+**Solution**: This is normal for new users. The router needs to learn user preferences from interaction history. After sufficient interactions, user embeddings will be learned and routing will become personalized.
 
 ### Issue: "Data format incorrect"
 
