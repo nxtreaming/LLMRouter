@@ -28,6 +28,7 @@ from llmrouter.models import (
     SmallestLLM,
     LargestLLM,
     AutomixRouter,
+    GMTRouter,
 )
 from llmrouter.models.llmmultiroundrouter import LLMMultiRoundRouter
 from llmrouter.models.knnmultiroundrouter import KNNMultiRoundRouter
@@ -73,6 +74,10 @@ if GraphRouter is not None:
 if CausalLMRouter is not None:
     ROUTER_REGISTRY["causallm_router"] = CausalLMRouter
     ROUTER_REGISTRY["causallmrouter"] = CausalLMRouter
+
+if GMTRouter is not None:
+    ROUTER_REGISTRY["gmtrouter"] = GMTRouter
+    ROUTER_REGISTRY["gmt_router"] = GMTRouter
 
 # Add RouterR1 if available
 if RouterR1 is not None:

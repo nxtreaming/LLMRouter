@@ -23,6 +23,7 @@ from llmrouter.models import (
     HybridLLMRouter,
     GraphRouter,
     CausalLMRouter,
+    GMTRouter,
     # Trainers
     KNNRouterTrainer,
     SVMRouterTrainer,
@@ -31,9 +32,10 @@ from llmrouter.models import (
     EloRouterTrainer,
     DCTrainer,
     AutomixRouterTrainer,
-    HybridLLMTrainer, 
+    HybridLLMTrainer,
     GraphTrainer,
     CausalLMTrainer,
+    GMTRouterTrainer,
 )
 
 # Import multi-round routers
@@ -52,12 +54,14 @@ ROUTER_TRAINER_REGISTRY: Dict[str, Tuple[Any, Any]] = {
     "routerdc": (DCRouter, DCTrainer),
     "automix": (AutomixRouter, AutomixRouterTrainer),
     "automixrouter": (AutomixRouter, AutomixRouterTrainer),
-    "hybrid_llm": (HybridLLMRouter, HybridLLMTrainer),      
+    "hybrid_llm": (HybridLLMRouter, HybridLLMTrainer),
     "hybridllm": (HybridLLMRouter, HybridLLMTrainer),
     "graphrouter": (GraphRouter, GraphTrainer),
     "causallm_router": (CausalLMRouter, CausalLMTrainer),
     "causallmrouter": (CausalLMRouter, CausalLMTrainer),
     "knnmultiroundrouter": (KNNMultiRoundRouter, KNNMultiRoundRouterTrainer),
+    "gmtrouter": (GMTRouter, GMTRouterTrainer),
+    "gmt_router": (GMTRouter, GMTRouterTrainer),
 }   
 
 # Routers that do not support training
