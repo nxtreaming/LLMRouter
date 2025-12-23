@@ -49,7 +49,7 @@
 ### Personalized Routers
 | Router | Training | Inference | Description | Tutorial |
 |--------|:--------:|:---------:|-------------|:--------:|
-| `gmtrouter` | [LINK](https://github.com/ulab-uiuc/GMTRouter) | ✅ | Graph-based personalized router with user preference learning (⚠️ Special data format required) | [📖](llmrouter/models/gmtrouter/README.md) |
+| `gmtrouter` | ✅ | ✅ | Graph-based personalized router with user preference learning (⚠️ Special data format required) | [📖](llmrouter/models/gmtrouter/README.md) |
 
 ### Agentic Routers
 | Router | Training | Inference | Description | Tutorial |
