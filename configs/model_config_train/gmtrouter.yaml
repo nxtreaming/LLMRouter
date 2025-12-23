@@ -1,0 +1,62 @@
+# Config parameters for GMTRouter (Graph-based Multi-Turn Router) training:
+
+
+data_path:
+  query_data_train: 'data/example_data/query_data/default_query_train.jsonl'
+  query_data_test: 'data/example_data/query_data/default_query_test.jsonl'
+  query_embedding_data: 'data/example_data/routing_data/query_embeddings_longformer.pt'
+  routing_data_train: 'data/example_data/routing_data/default_routing_train_data.jsonl'
+  routing_data_test: 'data/example_data/routing_data/default_routing_test_data.jsonl'
+  llm_data: 'data/example_data/llm_candidates/default_llm.json'
+  llm_embedding_data: 'data/example_data/llm_candidates/default_llm_embeddings.json'
+
+model_path:
+  ini_model_path: ''
+  save_model_path: 'saved_models/gmtrouter/gmtrouter.pt'
+  load_model_path: 'saved_models/gmtrouter/gmtrouter.pt'
+  user_embeddings_path: 'saved_models/gmtrouter/user_embeddings.pt'
+
+metric:
+  weights:
+    performance: 1
+    cost: 0
+    llm_judge: 0
+
+# GMTRouter-specific configuration
+gmt_config:
+  # Personalization settings
+  personalization: true             # Enable user preference learning
+  context_window: 5                 # Number of previous turns to consider
+
+  # GNN architecture
+  hidden_dim: 128                   # Hidden layer dimension for GNN
+  num_layers: 3                     # Number of GNN layers
+  dropout: 0.1                      # Dropout rate for regularization
+
+  # User embedding settings
+  user_embedding_dim: 64            # Dimension of user preference embeddings
+  update_user_embeddings: true      # Update user embeddings during training
+
+  # Graph construction
+  num_neighbors: 10                 # Number of neighbors for graph construction
+  edge_threshold: 0.5               # Similarity threshold for edge creation
+
+hparam:
+  # Training parameters
+  learning_rate: 0.001              # Learning rate for optimizer
+  weight_decay: 0.0001              # L2 regularization weight decay
+  train_epoch: 100                  # Number of training epochs
+  batch_size: 32                    # Batch size for training
+
+  # Early stopping
+  patience: 10                      # Early stopping patience
+
+  # Data split
+  val_split_ratio: 0.2              # Ratio of training data used for validation
+
+  # Reproducibility
+  random_state: 42                  # Random seed for reproducibility
+
+  # Multi-turn specific
+  max_history_length: 10            # Maximum conversation history to store
+  history_decay: 0.9                # Decay factor for older conversation turns

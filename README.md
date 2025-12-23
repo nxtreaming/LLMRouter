@@ -44,6 +44,7 @@
 ### Multi-Round Routers
 | Router | Training | Inference | Description | Tutorial |
 |--------|:--------:|:---------:|-------------|:--------:|
+| `gmtrouter` | ✅ | ✅ | Graph-based Multi-Turn router with personalization | [📖](llmrouter/models/gmtrouter/README.md) |
 | `router_r1` | [LINK](https://github.com/ulab-uiuc/Router-R1) | ✅ | Pre-trained Router-R1 model for multi-turn conversations | [📖](llmrouter/models/router_r1/README.md) |
 
 

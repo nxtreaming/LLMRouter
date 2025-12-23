@@ -47,6 +47,13 @@ try:
 except Exception:
     RouterR1 = None
 
+try:
+    from .gmtrouter import GMTRouter
+    from .gmtrouter import GMTRouterTrainer
+except Exception:
+    GMTRouter = None
+    GMTRouterTrainer = None
+
 __all__ = [
     "MetaRouter",
     "BaseTrainer",
@@ -84,4 +91,7 @@ __all__ = [
     "CausalLMTrainer",
 
     "RouterR1",
+
+    "GMTRouter",
+    "GMTRouterTrainer",
 ]
