@@ -78,42 +78,10 @@ class KNNMultiRoundRouter(MetaRouter):
         self.model_name_list = routing_best["model_name"].tolist()
         
         # Initialize prompts for decomposition and aggregation
-        self.DECOMP_PROMPT = """Given the query '{query}', decompose it into as many as 4 meaningful sub-queries (minimum 1, maximum 4). \
-Try to cover the full scope of the original query by breaking it down into multiple specific and distinct sub-tasks \
-whenever possible. Aim for the maximum number of high-quality sub-queries without introducing redundancy. \
-Each sub-query should be clear, self-contained, and semantically coherent. \
-
-**Output formatting rules (must be followed strictly):**
-    - Output only the decomposed sub-queries, one per line.
-    - Do not include any other text, explanations, or headers in your output.
-    - Each line should contain only one sub-query.
-"""
-        
-        self.AGENT_PROMPT = """You are a helpful assistant. \
-You are participating in a multi-agent reasoning process, where a base model delegates sub-questions to specialized models like you. \
-\nYour task is to do your **absolute best** to either: \n
-    + Answer the question directly, if possible, and provide a brief explanation; or \n
-    + Offer helpful and relevant context, background knowledge, or insights related to the question, even if you cannot fully answer it. \
-
-If you are completely unable to answer the question or provide any relevant or helpful information, you must: \n
-    + Clearly state that you are unable to assist with this question, and \n
-    + Explicitly instruct the base model to consult other LLMs for further assistance. \
-
-**Important Constraints**: \n
-    + Keep your response clear, concise, and informative (preferably under 512 tokens). Your response will help guide the base model's reasoning and next steps. \n
-    + Stay strictly on-topic. Do not include irrelevant or generic content. \
-
-\n\nHere is the sub-question for you to assist with: {query}\n"""
-        
-        self.DECOMP_COT_PROMPT = """You are given a question along with auxiliary information, which consists of several sub-questions derived from the original question and their respective answers. Use this information to answer the original question if relevant, but make your own reasoning step by step before arriving at the final answer. 
-
-Important: Your final answer MUST be clearly marked and enclosed within <answer> and </answer> tags at the end of your response. No other part of the output should be inside these tags.
-
-Auxiliary Information: {info}
-
-Question: {query}
-Let's think step by step.
-"""
+        from llmrouter.prompts import load_prompt_template
+        self.DECOMP_PROMPT = load_prompt_template("agent_decomp")
+        self.AGENT_PROMPT = load_prompt_template("agent_prompt")
+        self.DECOMP_COT_PROMPT = load_prompt_template("agent_decomp_cot")
         
         # Configuration for local LLM (for decomposition and aggregation)
         # Use .get() with defaults to handle missing config gracefully

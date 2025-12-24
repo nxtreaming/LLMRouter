@@ -2,6 +2,28 @@
 Prompt formatting utilities for LLMRouter scripts
 """
 
+from llmrouter.prompts import load_prompt_template
+
+# Registry for custom prompt formatters (for extensibility)
+PROMPT_REGISTRY = {}
+
+
+def register_prompt(task_name: str):
+    """
+    Decorator to register a custom prompt formatter.
+    
+    Args:
+        task_name: Name of the task to register (e.g., 'my_custom_task')
+    
+    Returns:
+        Decorator function
+    """
+    def decorator(func):
+        PROMPT_REGISTRY[task_name] = func
+        return func
+    return decorator
+
+
 def format_mc_prompt(question, choices):
     """Format prompt for multiple choice tasks
 
@@ -14,7 +36,7 @@ def format_mc_prompt(question, choices):
     for i, choice in enumerate(choices):
         formatted_choices += f"{options[i]}. {choice}\n"
 
-    system_prompt = "Answer the following multiple-choice question by selecting the correct option (A, B, C, or D). You MUST put your final answer letter in a parenthesis."
+    system_prompt = load_prompt_template("task_mc")
     user_query = f"""## Question:
 {question}
 
@@ -23,15 +45,17 @@ def format_mc_prompt(question, choices):
 
     return {"system": system_prompt, "user": user_query}
 
+
 def format_gsm8k_prompt(query):
     """Format prompt for GSM8K math tasks
 
     Returns:
         dict: {"system": system_prompt, "user": user_query}
     """
-    system_prompt = "Answer the following math question step by step."
+    system_prompt = load_prompt_template("task_gsm8k")
     user_query = f"Question: {query}"
     return {"system": system_prompt, "user": user_query}
+
 
 def format_math_prompt(query):
     """Format prompt for MATH tasks
@@ -39,9 +63,10 @@ def format_math_prompt(query):
     Returns:
         dict: {"system": system_prompt, "user": user_query}
     """
-    system_prompt = "Answer the following math question. Make sure to put the answer (and only answer) inside \\boxed{}."
+    system_prompt = load_prompt_template("task_math")
     user_query = f"Question: {query}"
     return {"system": system_prompt, "user": user_query}
+
 
 def format_commonsense_qa_prompt(query, choices):
     """Format prompt for commonsense QA tasks
@@ -55,9 +80,10 @@ def format_commonsense_qa_prompt(query, choices):
     for i, j in zip(label, text):
         choice_text += "\n" + "(" + i + ")" + " " + j
 
-    system_prompt = "Answer the following multiple-choice question by selecting the correct option. You MUST put your final answer letter in a parenthesis."
+    system_prompt = load_prompt_template("task_mc")  # Uses same MC format
     user_query = f"Question: {query}\n{choice_text}"
     return {"system": system_prompt, "user": user_query}
+
 
 def format_mbpp_prompt(text, tests):
     """Format prompt for MBPP code generation tasks
@@ -66,9 +92,10 @@ def format_mbpp_prompt(text, tests):
         dict: {"system": system_prompt, "user": user_query}
     """
     tests_str = "\n".join(tests)
-    system_prompt = "You are an expert Python programmer. Implement the function with no irrelevant words or comments. Put your code in this format: [BEGIN] <Your Code> [Done]"
+    system_prompt = load_prompt_template("task_mbpp")
     user_query = f"Task: {text}\n\nYour code should pass these tests:\n\n{tests_str}"
     return {"system": system_prompt, "user": user_query}
+
 
 def format_humaneval_prompt(prompt):
     """Format prompt for HumanEval code generation tasks
@@ -76,9 +103,10 @@ def format_humaneval_prompt(prompt):
     Returns:
         dict: {"system": system_prompt, "user": user_query}
     """
-    system_prompt = "You are an expert Python programmer. Implement the function body only. Do not repeat the function signature or docstring. Put the code in this format: [BEGIN] <Your Code - function body only> [Done]"
+    system_prompt = load_prompt_template("task_humaneval")
     user_query = f"Complete the following function:\n\n{prompt}"
     return {"system": system_prompt, "user": user_query}
+
 
 def generate_task_query(task_name, sample_data):
     """Generate query prompt based on task name and sample_data.
@@ -87,6 +115,21 @@ def generate_task_query(task_name, sample_data):
         dict: {"system": system_prompt, "user": user_query}
               For simple tasks without special formatting, system will be None.
     """
+    # First check custom registry (user-defined formatters take precedence)
+    if task_name in PROMPT_REGISTRY:
+        formatter = PROMPT_REGISTRY[task_name]
+        result = formatter(sample_data)
+        # Ensure result is in correct format
+        if isinstance(result, dict) and "system" in result and "user" in result:
+            return result
+        elif isinstance(result, str):
+            # Legacy format: return as user query only
+            return {"system": None, "user": result}
+        else:
+            # Try to convert to dict format
+            return {"system": None, "user": str(result)}
+    
+    # Built-in task formatters
     if task_name in ["natural_qa", "trivia_qa"]:
         # No special system prompt for these tasks
         return {"system": None, "user": sample_data['query']}
@@ -110,11 +153,3 @@ def generate_task_query(task_name, sample_data):
         return format_commonsense_qa_prompt(sample_data['query'], sample_data['choices'])
     else:
         raise ValueError(f"Unknown task name: {task_name}")
-
-
-
-
-
-
-
-
