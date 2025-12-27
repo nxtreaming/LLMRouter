@@ -22,6 +22,7 @@
 1. 🚀 *Smart Routing*: Automatically routes queries to the optimal LLM based on task complexity, cost, and performance requirements.
 2. 📊 *Multiple Router Models*: Support for **over 16 routing models**, including KNN, SVM, MLP, Matrix Factorization, Elo Rating, Graph-based routers, BERT-based routers, Hybrid probabilistic routers, transformed-score routers, multi-round routers, and many additional advanced strategies.
 3. 🛠️ *Unified CLI*: Complete command-line interface for training, inference, and interactive chat with Gradio-based UI.
+4. 📈 *Data Generation Pipeline*: Complete pipeline for generating training data from 11 benchmark datasets with automatic API calling and evaluation.
 
 ## News 📰
 
@@ -89,8 +90,93 @@ pip install -e .
 pip install llmrouter
 ```
 
+### Setting Up API Keys 🔑
+
+LLMRouter requires API keys to make LLM API calls for inference, chat, and data generation. Set the `API_KEYS` environment variable using one of the following formats:
+
+**JSON Array Format** (recommended for multiple keys):
+```bash
+export API_KEYS='["your-key-1", "your-key-2", "your-key-3"]'
+```
+
+**Comma-Separated Format** (alternative for multiple keys):
+```bash
+export API_KEYS='key1,key2,key3'
+```
+
+**Single Key** (for one API key):
+```bash
+export API_KEYS='your-api-key'
+```
+
+**Note**: 
+- API keys are used for **inference**, **chat interface**, and **data generation** (Step 3 of the pipeline)
+- Multiple keys enable automatic load balancing across API calls
+- The environment variable must be set before running inference, chat, or data generation commands
+- For persistent setup, add the export command to your shell profile (e.g., `~/.bashrc` or `~/.zshrc`)
+
+### Preparing Training Data 📊
+
+LLMRouter includes a complete data generation pipeline that transforms raw benchmark datasets into formatted routing data with embeddings. The pipeline supports 11 diverse benchmark datasets including Natural QA, Trivia QA, MMLU, GPQA, MBPP, HumanEval, GSM8K, CommonsenseQA, MATH, OpenbookQA, and ARC-Challenge.
+
+#### Pipeline Overview
+
+The data generation pipeline consists of three main steps:
+
+1. **Generate Query Data** - Extract queries from benchmark datasets and create train/test split JSONL files
+2. **Generate LLM Embeddings** - Create embeddings for LLM candidates from their metadata
+3. **API Calling & Evaluation** - Call LLM APIs, evaluate responses, and generate unified embeddings + routing data
+
+#### Quick Start
+
+Start with the sample configuration file:
+
+```bash
+# Step 1: Generate query data
+python llmrouter/data/data_generation.py --config llmrouter/data/sample_config.yaml
+
+# Step 2: Generate LLM embeddings
+python llmrouter/data/generate_llm_embeddings.py --config llmrouter/data/sample_config.yaml
+
+# Step 3: API calling & evaluation (requires API_KEYS - see "Setting Up API Keys" section above)
+python llmrouter/data/api_calling_evaluation.py --config llmrouter/data/sample_config.yaml --workers 100
+```
+
+#### Output Files
+
+The pipeline generates the following files:
+
+- **Query Data** (JSONL): `query_data_train.jsonl` and `query_data_test.jsonl` - Query data with train/test split
+- **LLM Embeddings** (JSON): `default_llm_embeddings.json` - LLM metadata with embeddings
+- **Query Embeddings** (PyTorch): `query_embeddings_longformer.pt` - Unified embeddings for all queries
+- **Routing Data** (JSONL): `default_routing_train_data.jsonl` and `default_routing_test_data.jsonl` - Complete routing data with model responses, performance scores, and token usage
+
+**Example routing data entry:**
+```json
+{
+  "task_name": "gsm8k",
+  "query": "Janet has 4 apples. She gives 2 to Bob. How many does she have left?",
+  "ground_truth": "2",
+  "metric": "GSM8K",
+  "model_name": "llama3-chatqa-1.5-8b",
+  "response": "Janet has 4 apples and gives 2 to Bob, so she has 4 - 2 = 2 apples left.",
+  "performance": 1.0,
+  "embedding_id": 42,
+  "token_num": 453
+}
+```
+
+#### Configuration
+
+All paths and parameters are controlled via YAML configuration. The sample config file (`llmrouter/data/sample_config.yaml`) references the example data directory and can be used as-is or customized for your setup.
+
+**Note**: Step 3 requires API keys for calling LLM services. See the [Setting Up API Keys](#setting-up-api-keys-) section above for configuration details.
+
+For complete documentation including detailed file formats, embedding mapping system, configuration options, and troubleshooting, see **[llmrouter/data/README.md](llmrouter/data/README.md)**.
 
 ### Training a Router
+
+Before training, ensure you have prepared your data using the [Data Generation Pipeline](#preparing-training-data-) or use the example data in `data/example_data/`.
 
 Train various router models with your configuration:
 ```bash
@@ -106,7 +192,7 @@ llmrouter train --router mfrouter --config configs/model_config_train/mfrouter.y
 
 ### Running Inference
 
-Perform inference with trained routers:
+Perform inference with trained routers (requires API keys - see [Setting Up API Keys](#setting-up-api-keys-) section):
 ```bash
 # Single query inference
 llmrouter infer --router knnrouter --config config.yaml --query "What is machine learning?"
@@ -114,7 +200,7 @@ llmrouter infer --router knnrouter --config config.yaml --query "What is machine
 # Batch inference from file
 llmrouter infer --router knnrouter --config config.yaml --input queries.txt --output results.json
 
-# Route only (without calling LLM API)
+# Route only (without calling LLM API - no API keys needed)
 llmrouter infer --router knnrouter --config config.yaml --query "Hello" --route-only
 
 # Custom generation parameters
@@ -124,6 +210,8 @@ llmrouter infer --router knnrouter --config config.yaml --query "Explain AI" --t
 Input file formats supported: `.txt` (one query per line), `.json` (list of strings or objects with `"query"` field), `.jsonl` (one JSON object per line).
 
 ### Interactive Chat Interface
+
+Launch a Gradio-based chat interface (requires API keys - see [Setting Up API Keys](#setting-up-api-keys-) section):
 
 <div style="text-align:center;">
     <img src="assets/llmrouter_chat.gif" style="width: 100%; height: auto;">
@@ -143,8 +231,6 @@ Input file formats supported: `.txt` (one query per line), `.json` (list of stri
 <p align="center">
     <strong>🎥 Full Demo:</strong> Complete walkthrough demonstrating the interactive chat interface, including query routing, model selection, and response generation.
 </p>
-
-Launch a Gradio-based chat interface:
 ```bash
 # Basic chat interface
 llmrouter chat --router knnrouter --config config.yaml
