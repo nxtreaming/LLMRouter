@@ -102,10 +102,10 @@ class MetaRouter(nn.Module, ABC):
         """
         PyTorch-compatible forward method.
 
-        This simply delegates to `route()`, so that the router can be used
+        This simply delegates to `route_batch()`, so that the router can be used
         like a regular nn.Module in training loops.
         """
-        return self.route(batch)
+        return self.route_batch(batch)
 
     # ------------------------------------------------------------------
     # Optional shared utilities

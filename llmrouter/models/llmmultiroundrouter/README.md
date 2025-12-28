@@ -6,8 +6,13 @@ The **LLM Multi-Round Router** uses LLM-based reasoning for both query decomposi
 
 ## Paper Reference
 
-Zero-shot LLM-based routing with decomposition:
+This router implements multi-round routing as described in:
 
+- **[Router-R1: Teaching LLMs Multi-Round Routing and Aggregation via Reinforcement Learning](https://arxiv.org/abs/2506.09033)**
+  - Zhang, H., Feng, T., & You, J. (2025). arXiv:2506.09033.
+  - Proposes multi-round routing with decomposition and aggregation.
+
+Zero-shot LLM-based routing with decomposition:
 - **LLM Reasoning**: Uses language models to make routing decisions
 - **Zero-Shot**: No training required, works with prompts only
 - **Multi-Agent**: Decomposes and delegates to specialized models

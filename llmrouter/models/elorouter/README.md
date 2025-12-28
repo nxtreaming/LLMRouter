@@ -6,18 +6,18 @@ The **ELO Router** is a rating-based routing method that ranks LLMs using the El
 
 ## Paper Reference
 
-This router is inspired by the **Elo Rating System** and its application to LLM evaluation:
+This router is inspired by the **Elo Rating System** and **RouteLLM**:
+
+- **[RouteLLM: Learning to Route LLMs with Preference Data](https://arxiv.org/abs/2406.18665)**
+  - Ong, I., et al. (2024). arXiv:2406.18665. Published at ICLR 2025.
+  - Implements `sw_ranking` router using weighted Elo calculation.
 
 - **Original Elo System**:
   - Elo, A. E. (1978). "The Rating of Chessplayers, Past and Present." Arco Publishing.
 
 - **Application to LLMs**:
-  - Zheng, L., Chiang, W.-L., Sheng, Y., et al. (2023). "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena." NeurIPS.
-  - Inspired by Chatbot Arena's use of Elo ratings for LLM leaderboards
-
-- **Statistical Foundation**:
+  - Zheng, L., et al. (2023). "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena." NeurIPS.
   - Bradley-Terry Model: Bradley, R. A., & Terry, M. E. (1952). "Rank Analysis of Incomplete Block Designs." Biometrika.
-  - This router uses Maximum Likelihood Estimation (MLE) via logistic regression to compute Elo scores
 
 ## How It Works
 

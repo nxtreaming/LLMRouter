@@ -3,6 +3,12 @@ import json
 from llmrouter.utils import load_csv, load_jsonl, jsonl_to_csv, load_pt
 
 
+def load_json_file(path: str):
+    """Load JSON file with proper file handle management."""
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 class DataLoader:
     """
     DataLoaderCore
@@ -44,7 +50,5 @@ class DataLoader:
         obj_ref.routing_data_test = safe_load("routing_data_test", jsonl_to_csv, "routing_data_test")
 
         # LLM info
-        obj_ref.llm_data = safe_load("llm_data", lambda p: json.load(open(p, "r", encoding="utf-8")), "llm_data")
-        obj_ref.llm_embedding_data = safe_load(
-            "llm_embedding_data", lambda p: json.load(open(p, "r", encoding="utf-8")), "llm_embedding_data"
-        )
+        obj_ref.llm_data = safe_load("llm_data", load_json_file, "llm_data")
+        obj_ref.llm_embedding_data = safe_load("llm_embedding_data", load_json_file, "llm_embedding_data")

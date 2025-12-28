@@ -52,11 +52,16 @@ class BaseTrainer(ABC):
         pass
 
     @abstractmethod
-    def train(self, dataloader: Any):
+    def train(self, dataloader: Any = None):
         """
         Define the full training loop.
 
         Subclasses must implement this method.
+
+        Args:
+            dataloader (Any, optional):
+                Optional dataloader for training data. Some trainers
+                may use data from the router itself instead.
         """
         pass
 

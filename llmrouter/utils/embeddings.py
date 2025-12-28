@@ -120,7 +120,7 @@ def parallel_embedding_task(data):
     """
     success: bool = True
     id, query_t = data
-    query_t_embedding = ""
+    query_t_embedding = None
 
     try:
         # Compute embedding
@@ -128,6 +128,6 @@ def parallel_embedding_task(data):
     except Exception as e:
         print(f"Error in parallel embedding task (id={id}): {e}")
         success = False
-        query_t_embedding = ""
+        query_t_embedding = None
 
     return id, query_t_embedding, success

@@ -1,5 +1,11 @@
 # GMTRouter - Graph-based Multi-Turn Personalized Router
 
+## Paper Reference
+
+- **[GMTRouter: Personalized LLM Router over Multi-turn User Interactions](https://arxiv.org/abs/2511.08590)**
+  - Xie, E., et al. (2025). arXiv:2511.08590.
+  - Proposes graph-based personalized routing with user preference learning.
+
 ## ⚠️ Important Notice
 
 **GMTRouter uses a fundamentally different architecture and data format from other routers in LLMRouter.**

@@ -6,11 +6,13 @@ The **MLP Router** (Multi-Layer Perceptron Router) is a supervised learning-base
 
 ## Paper Reference
 
-This router implements a classic **Multi-Layer Perceptron (MLP)** approach for classification. While MLP is a foundational machine learning technique, its application to LLM routing is inspired by:
+This router implements a **Multi-Layer Perceptron (MLP)** approach for LLM routing, as described in:
 
-- **General Concept**: Standard supervised learning for classification tasks
+- **[FusionFactory: Fusing LLM Capabilities with Multi-LLM Log Data](https://arxiv.org/abs/2507.10540)**
+  - Feng, T., Zhang, H., Lei, Z., et al. (2025). arXiv:2507.10540.
+  - Proposes query-level fusion via tailored LLM routers including MLP-based approaches.
+
 - **Foundation**: Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). "Learning representations by back-propagating errors." Nature.
-- **Application to Routing**: Adapts classification techniques to select optimal LLMs based on query embeddings
 
 The MLP Router treats LLM selection as a multi-class classification problem where the goal is to predict the best-performing model for each input query.
 

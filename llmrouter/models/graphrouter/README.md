@@ -6,11 +6,14 @@ The **Graph Router** uses Graph Neural Networks (GNNs) to make routing decisions
 
 ## Paper Reference
 
-This router is inspired by **Graph Neural Networks** and their application to recommendation:
+This router implements the **GraphRouter** approach:
+
+- **[GraphRouter: A Graph-based Router for LLM Selections](https://arxiv.org/abs/2410.03834)**
+  - (2024). arXiv:2410.03834.
+  - Constructs heterogeneous graph with task, query, and LLM nodes for routing.
 
 - **GNN Foundations**: Kipf, T. N., & Welling, M. (2017). "Semi-supervised classification with graph convolutional networks." ICLR.
-- **Heterogeneous GNNs**: Wang, X., et al. (2019). "Heterogeneous graph attention network." WWW.
-- **Application**: Treats LLM routing as link prediction in a bipartite query-model graph
+- **Application**: Treats LLM routing as link prediction in a bipartite query-model graph.
 
 ## How It Works
 

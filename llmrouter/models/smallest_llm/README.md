@@ -4,6 +4,14 @@
 
 The **Smallest LLM Router** is a simple heuristic router that always selects the smallest available LLM based on model size. It prioritizes cost-efficiency over performance, making it ideal for cost-sensitive applications.
 
+## Paper Reference
+
+This router is a baseline method described in:
+
+- **[GraphRouter: A Graph-based Router for LLM Selections](https://arxiv.org/abs/2410.03834)**
+  - (2024). arXiv:2410.03834.
+  - Uses smallest/largest LLM as baseline comparison for routing methods.
+
 ## How It Works
 
 ### Routing Logic
