@@ -24,7 +24,7 @@
 ## ✨ Introduction
 
 <div align="center">
-  <img src="assets/llmrouter.png" alt="LLMRouter Overview" style="width: 100%; max-width: 1000px;">
+  <img src="assets/llmrouter_.png" alt="LLMRouter Overview" style="width: 100%; max-width: 1000px;">
 </div>
 
 
