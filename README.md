@@ -282,6 +282,7 @@ Launch a Gradio-based chat interface (requires API keys - see [Setting Up API Ke
 <p align="center">
     <strong>🎥 Full Demo:</strong> Complete walkthrough demonstrating the interactive chat interface, including query routing, model selection, and response generation.
 </p>
+
 ```bash
 # Basic chat interface
 llmrouter chat --router knnrouter --config config.yaml
