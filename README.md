@@ -421,7 +421,6 @@ llmrouter infer --router thresholdrouter \
 
 For detailed guides on creating custom routers:
 - 📖 **Quick Start**: [custom_routers/README.md](custom_routers/README.md)
-- 📖 **Detailed Tutorial**: [docs/CUSTOM_ROUTERS.md](docs/CUSTOM_ROUTERS.md)
 - 📖 **Implementation Summary**: [CUSTOM_ROUTER_SUMMARY.md](CUSTOM_ROUTER_SUMMARY.md)
 
 ### Common Routing Patterns

@@ -8,6 +8,7 @@ data_path:
   routing_data_test: 'data/example_data/routing_data/default_routing_test_data.jsonl'
   llm_data: 'data/example_data/llm_candidates/default_llm.json'
   llm_embedding_data: 'data/example_data/llm_candidates/default_llm_embeddings.json'
+  preprocessed_dir: 'data/dcrouter_preprocessed'
 
 
 model_path:

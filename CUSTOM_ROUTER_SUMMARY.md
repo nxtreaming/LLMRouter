@@ -60,9 +60,7 @@ for router_name, router_class in plugin_registry.discovered_routers.items():
 
 ### 4. Complete Documentation
 
-- 📖 `docs/CUSTOM_ROUTERS.md` - Detailed tutorial
-- 📖 `custom_routers/README.md` - Quick start
-- 📖 `PLUGIN_SYSTEM_GUIDE.md` - Complete guide
+- 📖 `custom_routers/README.md` - Quick start guide
 
 ---
 
@@ -95,10 +93,6 @@ LLMRouter/
 │       ├── trainer.py                Complete trainer
 │       └── config.yaml               (optional)
 │
-├── docs/
-│   └── CUSTOM_ROUTERS.md             ⭐ NEW - Detailed docs
-│
-├── PLUGIN_SYSTEM_GUIDE.md            ⭐ NEW - Complete guide
 └── tests/test_plugin_system.py       ⭐ NEW - Test script
 ```
 
@@ -387,9 +381,7 @@ llmrouter infer --router awesome_router \
 ## 📚 Documentation Index
 
 1. **Quick Start**: `custom_routers/README.md`
-2. **Detailed Tutorial**: `docs/CUSTOM_ROUTERS.md`
-3. **Complete Guide**: `PLUGIN_SYSTEM_GUIDE.md`
-4. **API Documentation**: Inline documentation in `llmrouter/plugin_system.py`
+2. **API Documentation**: Inline documentation in `llmrouter/plugin_system.py`
 
 ---
 

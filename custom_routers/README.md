@@ -80,7 +80,7 @@ llmrouter infer --router thresholdrouter \
 
 ## Creating Your Own Router
 
-See [CUSTOM_ROUTERS.md](../docs/CUSTOM_ROUTERS.md) for detailed guide.
+See [CUSTOM_ROUTER_SUMMARY.md](../CUSTOM_ROUTER_SUMMARY.md) for detailed guide.
 
 ### Minimal Template
 
@@ -307,7 +307,7 @@ Submit via:
 
 ## Support
 
-- Documentation: [CUSTOM_ROUTERS.md](../docs/CUSTOM_ROUTERS.md)
+- Documentation: [CUSTOM_ROUTER_SUMMARY.md](../CUSTOM_ROUTER_SUMMARY.md)
 - GitHub Issues: Report bugs or request features
 - Examples: Study `randomrouter` and `thresholdrouter`
 - Community: Join our Slack for discussions

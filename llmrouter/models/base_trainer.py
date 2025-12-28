@@ -49,7 +49,7 @@ class BaseTrainer(ABC):
 
         Subclasses must implement this method.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement loss_func()")
 
     @abstractmethod
     def train(self, dataloader: Any = None):

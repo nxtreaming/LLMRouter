@@ -224,7 +224,7 @@ def process_unified_embeddings_and_routing(
                     # Try to parse as JSON first
                     parsed = json.loads(record['choices'])
                     # Convert back to Python dict string format (matches sample)
-                    record['choices'] = str(parsed).replace("'", "'")  # Keep single quotes
+                    record['choices'] = str(parsed)
                 except (json.JSONDecodeError, ValueError, TypeError):
                     # Already in Python format or invalid - keep as is
                     pass

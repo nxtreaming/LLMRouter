@@ -44,10 +44,16 @@ from llmrouter.data.data_loader import DataLoader
 setup_environment()
 
 
-def get_n_samples(N=10, random_seed=42):
-    """Extract samples from all datasets"""
+def get_n_samples(N=10, random_seed=42, cache_dir=None):
+    """Extract samples from all datasets
+
+    Args:
+        N: Number of samples per dataset
+        random_seed: Random seed for reproducibility
+        cache_dir: Optional cache directory for datasets. If None, uses default HuggingFace cache.
+    """
     random.seed(random_seed)
-    
+
     # Initialize empty lists for each dataset
     natural_qa_samples = []
     trivia_qa_samples = []
@@ -64,7 +70,7 @@ def get_n_samples(N=10, random_seed=42):
     # 1. Natural QA dataset
     try:
         natural_qa = load_dataset('RUC-NLPIR/FlashRAG_datasets', 'nq',
-                                  cache_dir='/data/taofeng2/Router_bench/dataset/World Knowledge')
+                                  cache_dir=cache_dir)
         split_name = 'train' if 'train' in natural_qa else list(natural_qa.keys())[0]
         dataset_size = len(natural_qa[split_name])
         if dataset_size >= N:
@@ -79,7 +85,7 @@ def get_n_samples(N=10, random_seed=42):
     # 2. Trivia QA dataset
     try:
         trivia_qa = load_dataset("trivia_qa", "rc.nocontext",
-                                 cache_dir='/data/taofeng2/Router_bench/dataset/World Knowledge')
+                                 cache_dir=cache_dir)
         split_name = 'train' if 'train' in trivia_qa else list(trivia_qa.keys())[0]
         dataset_size = len(trivia_qa[split_name])
         if dataset_size >= N:
@@ -93,7 +99,7 @@ def get_n_samples(N=10, random_seed=42):
 
     # 3. MMLU dataset
     try:
-        mmlu = load_dataset("cais/mmlu", "all", cache_dir='/data/taofeng2/Router_bench/dataset/Popular')
+        mmlu = load_dataset("cais/mmlu", "all", cache_dir=cache_dir)
         split_name = 'auxiliary_train' if 'auxiliary_train' in mmlu else list(mmlu.keys())[0]
         dataset_size = len(mmlu[split_name])
         if dataset_size >= N:
@@ -108,7 +114,7 @@ def get_n_samples(N=10, random_seed=42):
     # 4. GPQA dataset
     try:
         gpqa = load_dataset("Idavidrein/gpqa", "gpqa_main",
-                            cache_dir='/data/taofeng2/Router_bench/dataset/Popular/gpqa')
+                            cache_dir=cache_dir)
         split_name = 'train' if 'train' in gpqa else list(gpqa.keys())[0]
         dataset_size = len(gpqa[split_name])
         if dataset_size >= N:
@@ -120,12 +126,11 @@ def get_n_samples(N=10, random_seed=42):
     except Exception as e:
         print(f"Error extracting from GPQA: {e}")
 
-    # 5. MBPP dataset
+    # 5. MBPP dataset (loaded from HuggingFace)
     try:
-        mdpp_path = '/data/taofeng2/Router_bench/dataset/Code/mbpp.jsonl'
-        with open(mdpp_path, 'r') as f:
-            lines = f.readlines()
-        mbpp_samples_all = [json.loads(line) for line in lines]
+        mbpp_dataset = load_dataset("mbpp", "full", cache_dir=cache_dir)
+        split_name = 'train' if 'train' in mbpp_dataset else list(mbpp_dataset.keys())[0]
+        mbpp_samples_all = list(mbpp_dataset[split_name])
         dataset_size = len(mbpp_samples_all)
         if dataset_size >= N:
             indices = random.sample(range(dataset_size), N)
@@ -136,12 +141,11 @@ def get_n_samples(N=10, random_seed=42):
     except Exception as e:
         print(f"Error extracting from MBPP: {e}")
 
-    # 6. HumanEval dataset
+    # 6. HumanEval dataset (loaded from HuggingFace)
     try:
-        humaneval_path = '/data/taofeng2/Router_bench/dataset/Code/HumanEval.jsonl'
-        with open(humaneval_path, 'r') as f:
-            lines = f.readlines()
-        humaneval_samples_all = [json.loads(line) for line in lines]
+        humaneval_dataset = load_dataset("openai/openai_humaneval", cache_dir=cache_dir)
+        split_name = 'test' if 'test' in humaneval_dataset else list(humaneval_dataset.keys())[0]
+        humaneval_samples_all = list(humaneval_dataset[split_name])
         dataset_size = len(humaneval_samples_all)
         if dataset_size >= N:
             indices = random.sample(range(dataset_size), N)
@@ -155,7 +159,7 @@ def get_n_samples(N=10, random_seed=42):
     # 7. GSM8K dataset
     try:
         gsm8k = load_dataset('gsm8k', 'main',
-                             cache_dir='/data/taofeng2/Router_bench/dataset/Math')
+                             cache_dir=cache_dir)
         split_name = 'train' if 'train' in gsm8k else list(gsm8k.keys())[0]
         dataset_size = len(gsm8k[split_name])
         if dataset_size >= N:
@@ -170,7 +174,7 @@ def get_n_samples(N=10, random_seed=42):
     # 8. CommonsenseQA dataset
     try:
         commonsense_qa = load_dataset('commonsense_qa',
-                                      cache_dir='/data/taofeng2/Router_bench/dataset/Commonsense Reasoning')
+                                      cache_dir=cache_dir)
         split_name = 'train' if 'train' in commonsense_qa else list(commonsense_qa.keys())[0]
         dataset_size = len(commonsense_qa[split_name])
         if dataset_size >= N:
@@ -185,7 +189,7 @@ def get_n_samples(N=10, random_seed=42):
     # 9. ARC-Challenge dataset
     try:
         arc_challenge = load_dataset('allenai/ai2_arc', 'ARC-Challenge',
-                                     cache_dir='/data/taofeng2/Router_bench/dataset/Commonsense Reasoning')
+                                     cache_dir=cache_dir)
         split_name = 'train' if 'train' in arc_challenge else list(arc_challenge.keys())[0]
         dataset_size = len(arc_challenge[split_name])
         if dataset_size >= N:
@@ -200,7 +204,7 @@ def get_n_samples(N=10, random_seed=42):
     # 10. OpenbookQA dataset
     try:
         openbook_qa = load_dataset('allenai/openbookqa', 'main',
-                                   cache_dir='/data/taofeng2/Router_bench/dataset/Commonsense Reasoning')
+                                   cache_dir=cache_dir)
         split_name = 'train' if 'train' in openbook_qa else list(openbook_qa.keys())[0]
         dataset_size = len(openbook_qa[split_name])
         if dataset_size >= N:
@@ -218,7 +222,7 @@ def get_n_samples(N=10, random_seed=42):
                     'prealgebra', 'precalculus']
         for cate in CATEGORY:
             math = load_dataset('EleutherAI/hendrycks_math', cate,
-                                cache_dir='/data/taofeng2/Router_bench/dataset/Math')
+                                cache_dir=cache_dir)
             split_name = 'train' if 'train' in math else list(math.keys())[0]
             dataset_size = len(math[split_name])
             target_samples = N // len(CATEGORY) + 1
