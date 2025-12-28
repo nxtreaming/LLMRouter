@@ -5,7 +5,14 @@
 <h1 align="center">🚀 LLMRouter: An Open-Source Library for LLM Routing</h1>
 
 
-[![Python](https://img.shields.io/badge/PYTHON-3.10-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3109/)[![PRs](https://img.shields.io/badge/PRS-WELCOME-orange?style=for-the-badge)](https://github.com/ulab-uiuc/LLMRouter/pulls)[![Slack](https://img.shields.io/badge/SLACK-JOIN%20US-4A154B?style=for-the-badge&logo=slack&logoColor=white)](https://join.slack.com/t/llmrouteropen-ri04588/shared_invite/zt-3jz3cc6d1-ncwKEHvvWe0OczHx7K5c0g)[![License](https://img.shields.io/badge/LICENSE-MIT-2EA44F?style=for-the-badge)](LICENSE)
+<div align="center">
+  <p>
+    <a href="https://www.python.org/downloads/release/python-3109/"><img src="https://img.shields.io/badge/PYTHON-3.10-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"></a>
+    <a href="https://github.com/ulab-uiuc/LLMRouter/pulls"><img src="https://img.shields.io/badge/PRS-WELCOME-orange?style=for-the-badge" alt="PRs"></a>
+    <a href="https://join.slack.com/t/llmrouteropen-ri04588/shared_invite/zt-3jz3cc6d1-ncwKEHvvWe0OczHx7K5c0g"><img src="https://img.shields.io/badge/SLACK-JOIN%20US-4A154B?style=for-the-badge&logo=slack&logoColor=white" alt="Slack"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-2EA44F?style=for-the-badge" alt="License"></a>
+  </p>
+</div>
 
 
 
