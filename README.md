@@ -1,16 +1,24 @@
-<div style="text-align:center;">
-    <img src="assets/llmrouter.png" style="width: 100%; height: auto;">
-</div>
-
-
 <div align="center">
-  <img src="assets/logo.png" alt="LLMRouter Logo" width="220">
+  <img src="assets/logo.png" alt="LLMRouter Logo" width="140">
 </div>
-
 
 <h1 align="center">🚀 LLMRouter: An Open-Source Library for LLM Routing</h1>
 
+
+
 <div align="center">
+  <img src="assets/llmrouter.png" alt="LLMRouter Overview" style="width: 100%; max-width: 1000px;">
+</div>
+
+
+
+
+<br/>
+
+
+<div align="center">
+
+
 
 [![Python 3.10](https://img.shields.io/badge/python-%E2%89%A53.10-blue)](https://www.python.org/downloads/release/python-3109/)
 [![GitHub pull request](https://img.shields.io/badge/PRs-welcome-orange)](https://github.com/ulab-uiuc/LLMRouter/pulls)
@@ -18,6 +26,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 </div>
+
 
 ## Introduction ✨
 
