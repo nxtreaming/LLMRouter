@@ -272,8 +272,6 @@ Input file formats supported: `.txt` (one query per line), `.json` (list of stri
 
 ### Interactive Chat Interface
 
-Launch a Gradio-based chat interface (requires API keys - see [Setting Up API Keys](#-setting-up-api-keys) section):
-
 <div style="text-align:center;">
     <img src="assets/llmrouter_chat.gif" style="width: 100%; height: auto;">
 </div>
@@ -289,9 +287,8 @@ Launch a Gradio-based chat interface (requires API keys - see [Setting Up API Ke
     </video>
 </div>
 
-<p align="center">
-    <strong>🎥 Full Demo:</strong> Complete walkthrough demonstrating the interactive chat interface, including query routing, model selection, and response generation.
-</p>
+Launch the chat interface (requires API keys - see [Setting Up API Keys](#-setting-up-api-keys) section):
+
 ```bash
 # Basic chat interface
 llmrouter chat --router knnrouter --config config.yaml
