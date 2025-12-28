@@ -109,7 +109,7 @@ pip install -e .
 #### Install from PyPI
 
 ```bash
-pip install llmrouter
+pip install llmrouter-lib
 ```
 
 ### 🔑 Setting Up API Keys
