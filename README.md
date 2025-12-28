@@ -1,19 +1,9 @@
 <div align="center">
-  <img src="assets/logo.png" alt="LLMRouter Logo" width="140">
+  <img src="assets/logo.png" alt="LLMRouter Logo" width="200">
 </div>
 
 <h1 align="center">🚀 LLMRouter: An Open-Source Library for LLM Routing</h1>
 
-
-
-<div align="center">
-  <img src="assets/llmrouter.png" alt="LLMRouter Overview" style="width: 100%; max-width: 1000px;">
-</div>
-
-
-
-
-<br/>
 
 
 <div align="center">
@@ -30,12 +20,20 @@
 
 ## Introduction ✨
 
+<div align="center">
+  <img src="assets/llmrouter.png" alt="LLMRouter Overview" style="width: 100%; max-width: 1000px;">
+</div>
+
+
 **LLMRouter** is an intelligent routing system designed to optimize LLM inference by dynamically selecting the most suitable model for each query. To achieve intelligent routing, it defines:
 
 1. 🚀 *Smart Routing*: Automatically routes queries to the optimal LLM based on task complexity, cost, and performance requirements.
 2. 📊 *Multiple Router Models*: Support for **over 16 routing models**, including KNN, SVM, MLP, Matrix Factorization, Elo Rating, Graph-based routers, BERT-based routers, Hybrid probabilistic routers, transformed-score routers, multi-round routers, and many additional advanced strategies.
 3. 🛠️ *Unified CLI*: Complete command-line interface for training, inference, and interactive chat with Gradio-based UI.
 4. 📈 *Data Generation Pipeline*: Complete pipeline for generating training data from 11 benchmark datasets with automatic API calling and evaluation.
+
+
+
 
 ## News 📰
 
