@@ -30,13 +30,13 @@
 
 ## Links
 
-- [Installation](#installation)
 - [Supported Routers](#supported-routers-)
-- [Preparing Training Data](#preparing-training-data-)
+- [Installation](#installation)
+- [Use Your Own Dataset](#preparing-training-data-)
 - [Training a Router](#training-a-router)
 - [Running Inference](#running-inference)
 - [Interactive Chat Interface](#interactive-chat-interface)
-- [Creating Custom Routers](#-creating-custom-routers)
+- [Creating Your Own Routers](#-creating-custom-routers)
 - [Citation](#citation-)
 
 ## Supported Routers 🧭
