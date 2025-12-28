@@ -37,6 +37,7 @@
 - [Running Inference via a Router](#running-inference)
 - [Interactive Chat Interface with a Router](#interactive-chat-interface)
 - [Creating Your Own Routers](#-creating-custom-routers)
+- [Acknowledgments](#acknowledgments-)
 - [Citation](#citation-)
 
 ## Supported Routers 🧭
@@ -474,7 +475,7 @@ LLMRouter builds upon the excellent research from the community. We gratefully a
 - [**Hybrid LLM**](https://arxiv.org/abs/2404.14618) - Cost-Efficient and Quality-Aware Query Routing (ICLR 2024)
 - [**GraphRouter**](https://arxiv.org/abs/2410.03834) - A Graph-based Router for LLM Selections (ICLR 2025)
 - [**GMTRouter**](https://arxiv.org/abs/2511.08590) - Personalized LLM Router over Multi-turn User Interactions
-- [**Router-R1**](https://arxiv.org/abs/2506.09033) - Teaching LLMs Multi-Round Routing and Aggregation via RL (arXiv 2025)
+- [**Router-R1**](https://arxiv.org/abs/2506.09033) - Teaching LLMs Multi-Round Routing and Aggregation via RL (NeurIPS 2025)
 - [**FusionFactory**](https://arxiv.org/abs/2507.10540) - Fusing LLM Capabilities with Multi-LLM Log Data
 
 We warmly welcome contributions from the community! A powerful open-source router framework requires the collective effort of everyone. If you have developed a new routing method, please consider submitting a PR to add it to LLMRouter. Together, we can build the most comprehensive LLM routing library!
