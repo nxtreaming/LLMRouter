@@ -7,31 +7,21 @@
 
 <div align="center">
   <p>
-    <a href="https://www.python.org/downloads/release/python-3109/"
-       style="text-decoration:none; outline:none; border:none; display:inline-block;">
-      <img src="https://img.shields.io/badge/PYTHON-3.10-3776AB?style=for-the-badge&logo=python&logoColor=white"
-           style="display:block;">
+    <a href="https://www.python.org/downloads/release/python-3109/" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/PYTHON-3.10-3776AB?style=for-the-badge&logo=python&logoColor=white">
     </a>
-
-    <a href="https://github.com/ulab-uiuc/LLMRouter/pulls"
-       style="text-decoration:none; outline:none; border:none; display:inline-block;">
-      <img src="https://img.shields.io/badge/PRS-WELCOME-orange?style=for-the-badge"
-           style="display:block;">
+    <a href="https://github.com/ulab-uiuc/LLMRouter/pulls" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/PRS-WELCOME-orange?style=for-the-badge">
     </a>
-
-    <a href="https://join.slack.com/t/llmrouteropen-ri04588/shared_invite/zt-3jz3cc6d1-ncwKEHvvWe0OczHx7K5c0g"
-       style="text-decoration:none; outline:none; border:none; display:inline-block;">
-      <img src="https://img.shields.io/badge/SLACK-JOIN%20US-4A154B?style=for-the-badge&logo=slack&logoColor=white"
-           style="display:block;">
+    <a href="https://join.slack.com/t/llmrouteropen-ri04588/shared_invite/zt-3jz3cc6d1-ncwKEHvvWe0OczHx7K5c0g" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/SLACK-JOIN%20US-4A154B?style=for-the-badge&logo=slack&logoColor=white">
     </a>
-
-    <a href="LICENSE"
-       style="text-decoration:none; outline:none; border:none; display:inline-block;">
-      <img src="https://img.shields.io/badge/LICENSE-MIT-2EA44F?style=for-the-badge"
-           style="display:block;">
+    <a href="LICENSE" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/LICENSE-MIT-2EA44F?style=for-the-badge">
     </a>
   </p>
 </div>
+
 
 
 
