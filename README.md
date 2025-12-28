@@ -25,9 +25,13 @@
 
 </div>
 
+<<<<<<< HEAD
 
 
 ## Introduction ✨
+=======
+## ✨ Introduction
+>>>>>>> 90833e5de5280f012d1f43050943626895784299
 
 <div align="center">
   <img src="assets/llmrouter.png" alt="LLMRouter Overview" style="width: 100%; max-width: 1000px;">
@@ -41,26 +45,23 @@
 3. 🛠️ *Unified CLI*: Complete command-line interface for training, inference, and interactive chat with Gradio-based UI.
 4. 📈 *Data Generation Pipeline*: Complete pipeline for generating training data from 11 benchmark datasets with automatic API calling and evaluation.
 
-
-
-
-## News 📰
+## 📰 News
 
 - 🚀 **[2025-12]**: **LLMRouter** is officially released - ship smarter 🧠, cost-aware 💸 LLM routing with 16+ routers 🧭, a unified `llmrouter` CLI 🛠️, and a plugin workflow for custom routers 🧩.
 
-## Links
+## 🔗 Links
 
-- [Supported Routers](#supported-routers-)
+- [Supported Routers](#-supported-routers)
 - [Installation](#installation)
-- [Use Your Own Dataset](#preparing-training-data-)
+- [Use Your Own Dataset](#-preparing-training-data)
 - [Training a Router](#training-a-router)
 - [Running Inference via a Router](#running-inference)
 - [Interactive Chat Interface with a Router](#interactive-chat-interface)
 - [Creating Your Own Routers](#-creating-custom-routers)
-- [Acknowledgments](#acknowledgments-)
-- [Citation](#citation-)
+- [Acknowledgments](#-acknowledgments)
+- [Citation](#-citation)
 
-## Supported Routers 🧭
+## 🧭 Supported Routers
 
 ### Single-Round Routers
 | Router | Training | Inference | Description | Tutorial |
@@ -94,7 +95,7 @@
 | `knnmultiroundrouter` | ✅ | ✅ | KNN-based agentic router for complex tasks | [📖](llmrouter/models/knnmultiroundrouter/README.md) |
 | `llmmultiroundrouter` | N/A | ✅ | LLM-based agentic router for complex tasks | [📖](llmrouter/models/llmmultiroundrouter/README.md) |
 
-## Get Started 🚀
+## 🚀 Get Started
 
 ### Installation
 
@@ -121,7 +122,7 @@ pip install -e .
 pip install llmrouter
 ```
 
-### Setting Up API Keys 🔑
+### 🔑 Setting Up API Keys
 
 LLMRouter requires API keys to make LLM API calls for inference, chat, and data generation. Set the `API_KEYS` environment variable using one of the following formats:
 
@@ -146,7 +147,7 @@ export API_KEYS='your-api-key'
 - The environment variable must be set before running inference, chat, or data generation commands
 - For persistent setup, add the export command to your shell profile (e.g., `~/.bashrc` or `~/.zshrc`)
 
-### Configuring API Endpoints 🌐
+### 🌐 Configuring API Endpoints
 
 API endpoints can be specified at two levels (resolved in priority order):
 
@@ -179,7 +180,7 @@ api_endpoint: 'https://integrate.api.nvidia.com/v1'  # Fallback for all models
 
 For details, see [Data Generation Pipeline documentation](llmrouter/data/README.md#llm-data-json-default_llmjson).
 
-### Preparing Training Data 📊
+### 📊 Preparing Training Data
 
 LLMRouter includes a complete data generation pipeline that transforms raw benchmark datasets into formatted routing data with embeddings. The pipeline supports 11 diverse benchmark datasets including Natural QA, Trivia QA, MMLU, GPQA, MBPP, HumanEval, GSM8K, CommonsenseQA, MATH, OpenbookQA, and ARC-Challenge.
 
@@ -234,13 +235,13 @@ The pipeline generates the following files:
 
 All paths and parameters are controlled via YAML configuration. The sample config file (`llmrouter/data/sample_config.yaml`) references the example data directory and can be used as-is or customized for your setup.
 
-**Note**: Step 3 requires API keys for calling LLM services. See the [Setting Up API Keys](#setting-up-api-keys-) section above for configuration details.
+**Note**: Step 3 requires API keys for calling LLM services. See the [Setting Up API Keys](#-setting-up-api-keys) section above for configuration details.
 
 For complete documentation including detailed file formats, embedding mapping system, configuration options, and troubleshooting, see **[llmrouter/data/README.md](llmrouter/data/README.md)**.
 
 ### Training a Router
 
-Before training, ensure you have prepared your data using the [Data Generation Pipeline](#preparing-training-data-) or use the example data in `data/example_data/`.
+Before training, ensure you have prepared your data using the [Data Generation Pipeline](#-preparing-training-data) or use the example data in `data/example_data/`.
 
 Train various router models with your configuration:
 ```bash
@@ -256,7 +257,7 @@ llmrouter train --router mfrouter --config configs/model_config_train/mfrouter.y
 
 ### Running Inference
 
-Perform inference with trained routers (requires API keys - see [Setting Up API Keys](#setting-up-api-keys-) section):
+Perform inference with trained routers (requires API keys - see [Setting Up API Keys](#-setting-up-api-keys) section):
 ```bash
 # Single query inference
 llmrouter infer --router knnrouter --config config.yaml --query "What is machine learning?"
@@ -275,7 +276,7 @@ Input file formats supported: `.txt` (one query per line), `.json` (list of stri
 
 ### Interactive Chat Interface
 
-Launch a Gradio-based chat interface (requires API keys - see [Setting Up API Keys](#setting-up-api-keys-) section):
+Launch a Gradio-based chat interface (requires API keys - see [Setting Up API Keys](#-setting-up-api-keys) section):
 
 <div style="text-align:center;">
     <img src="assets/llmrouter_chat.gif" style="width: 100%; height: auto;">
@@ -477,7 +478,7 @@ def route_single(self, query_input):
 [![Star History Chart](https://api.star-history.com/svg?repos=ulab-uiuc/LLMRouter&type=date&legend=top-left)](https://www.star-history.com/#ulab-uiuc/LLMRouter&type=date&legend=top-left) -->
 
 
-## TODO 🗺️
+## 🗺️ TODO
 
 - [ ] Improve personalized routers: stronger user profiling, cold-start strategies, and online feedback updates.
 - [ ] Integrate a multimodal router: support image/audio inputs and route by modality + task type to the right multimodal model.
@@ -485,7 +486,7 @@ def route_single(self, query_input):
 
 
 
-## Acknowledgments 🙏
+## 🙏 Acknowledgments
 
 LLMRouter builds upon the excellent research from the community. We gratefully acknowledge the following works that inspired our router implementations:
 
@@ -500,7 +501,7 @@ LLMRouter builds upon the excellent research from the community. We gratefully a
 
 We warmly welcome contributions from the community! A powerful open-source router framework requires the collective effort of everyone. If you have developed a new routing method, please consider submitting a PR to add it to LLMRouter. Together, we can build the most comprehensive LLM routing library!
 
-## Citation 📚
+## 📚 Citation
 
 If you find LLMRouter useful for your research or projects, please cite it as:
 
