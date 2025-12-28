@@ -8,8 +8,11 @@ The **Hybrid LLM Router** intelligently balances between a small (cheap) and lar
 
 Based on the **Hybrid LLM** approach:
 
-- **Paper**: Ding, Y., et al. (2024). "Hybrid LLM: Cost-Efficient and Quality-Aware Query Routing." arXiv.
-- **Key Idea**: Route to small model when quality gap is small, large model otherwise
+- **[Hybrid LLM: Cost-Efficient and Quality-Aware Query Routing](https://arxiv.org/abs/2404.14618)**
+  - Ding, Y., et al. (2024). arXiv:2404.14618.
+  - Proposes MLP-based quality gap prediction for cost-aware routing.
+
+- **Key Idea**: Route to small model when quality gap is small, large model otherwise.
 
 ## How It Works
 

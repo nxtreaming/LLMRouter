@@ -4,6 +4,14 @@
 
 The **Largest LLM Router** is a simple heuristic router that always selects the largest available LLM based on model size. It prioritizes maximum quality over cost, making it ideal for quality-critical applications.
 
+## Paper Reference
+
+This router is a baseline method described in:
+
+- **[GraphRouter: A Graph-based Router for LLM Selections](https://arxiv.org/abs/2410.03834)**
+  - (2024). arXiv:2410.03834.
+  - Uses smallest/largest LLM as baseline comparison for routing methods.
+
 ## How It Works
 
 ### Routing Logic

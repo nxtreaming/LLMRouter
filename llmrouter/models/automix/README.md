@@ -8,8 +8,9 @@ The **Automix Router** is a cost-effective routing method that uses self-verific
 
 This router implements the **Automix** framework from:
 
-- **Paper**: Madaan, Aman, et al. (2023). "Automix: Automatically Mix Language Models." arXiv preprint arXiv:2310.12963.
-- **Key Idea**: Use a small model by default and only escalate to a large model when the small model's self-verification confidence is low
+- **[AutoMix: Automatically Mixing Language Models](https://arxiv.org/abs/2310.12963)**
+  - Aggarwal, P., Madaan, A., et al. (2023). arXiv:2310.12963. Published at NeurIPS 2024.
+  - Proposes self-verification and POMDP-based routing for cost-effective LLM selection.
 
 The Automix approach is based on the observation that many queries can be handled effectively by smaller models, and expensive large models should only be used when necessary.
 

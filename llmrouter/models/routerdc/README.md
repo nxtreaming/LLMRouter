@@ -8,8 +8,9 @@ The **RouterDC** is a sophisticated routing method that uses dual-contrastive le
 
 This router implements the **RouterDC** approach from:
 
-- **Paper**: (RouterDC - Dual-Contrastive Learning for LLM Routing)
-- **Key Idea**: Learn routing representations through multiple contrastive losses at different granularities
+- **[RouterDC: Query-Based Router by Dual Contrastive Learning for Assembling Large Language Models](https://arxiv.org/abs/2409.19886)**
+  - Chen, S., Jiang, W., Lin, B., Kwok, J., & Zhang, Y. (2024). arXiv:2409.19886. Published at NeurIPS 2024.
+  - Proposes dual contrastive learning for query-to-LLM routing.
 
 The router uses three types of contrastive learning:
 1. **Sample-LLM Contrastive Loss**: Learn query-to-model affinities

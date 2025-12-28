@@ -44,34 +44,34 @@
 ### Single-Round Routers
 | Router | Training | Inference | Description | Tutorial |
 |--------|:--------:|:---------:|-------------|:--------:|
-| [`knnrouter`](https://arxiv.org/abs/2507.10540) | ✅ | ✅ | K-Nearest Neighbors based routing | [📖](llmrouter/models/knnrouter/README.md) |
-| [`svmrouter`](https://arxiv.org/abs/2507.10540) | ✅ | ✅ | Support Vector Machine based routing | [📖](llmrouter/models/svmrouter/README.md) |
-| [`mlprouter`](https://arxiv.org/abs/2507.10540) | ✅ | ✅ | Multi-Layer Perceptron based routing | [📖](llmrouter/models/mlprouter/README.md) |
-| [`mfrouter`](https://arxiv.org/abs/2406.18665) | ✅ | ✅ | Matrix Factorization based routing | [📖](llmrouter/models/mfrouter/README.md) |
-| [`elorouter`](https://arxiv.org/abs/2406.18665) | N/A | ✅ | Elo Rating based routing | [📖](llmrouter/models/elorouter/README.md) |
-| [`routerdc`](https://arxiv.org/abs/2409.19886) | ✅ | ✅ | Dual Contrastive learning based routing | [📖](llmrouter/models/routerdc/README.md) |
-| [`automix`](https://arxiv.org/abs/2310.12963) | N/A | ✅ | Automatic model mixing | [📖](llmrouter/models/automix/README.md) |
-| [`hybrid_llm`](https://arxiv.org/abs/2404.14618) | ✅ | ✅ | Hybrid LLM routing strategy | [📖](llmrouter/models/hybrid_llm/README.md) |
-| [`graphrouter`](https://arxiv.org/abs/2410.03834) | ✅ | ✅ | Graph-based routing | [📖](llmrouter/models/graphrouter/README.md) |
-| [`causallm_router`](https://arxiv.org/abs/2406.18665) | ✅ | ✅ | Causal Language Model router | [📖](llmrouter/models/causallm_router/README.md) |
+| `knnrouter` | ✅ | ✅ | K-Nearest Neighbors based routing | [📖](llmrouter/models/knnrouter/README.md) |
+| `svmrouter` | ✅ | ✅ | Support Vector Machine based routing | [📖](llmrouter/models/svmrouter/README.md) |
+| `mlprouter` | ✅ | ✅ | Multi-Layer Perceptron based routing | [📖](llmrouter/models/mlprouter/README.md) |
+| `mfrouter` | ✅ | ✅ | Matrix Factorization based routing | [📖](llmrouter/models/mfrouter/README.md) |
+| `elorouter` | N/A | ✅ | Elo Rating based routing | [📖](llmrouter/models/elorouter/README.md) |
+| `routerdc` | ✅ | ✅ | Dual Contrastive learning based routing | [📖](llmrouter/models/routerdc/README.md) |
+| `automix` | N/A | ✅ | Automatic model mixing | [📖](llmrouter/models/automix/README.md) |
+| `hybrid_llm` | ✅ | ✅ | Hybrid LLM routing strategy | [📖](llmrouter/models/hybrid_llm/README.md) |
+| `graphrouter` | ✅ | ✅ | Graph-based routing | [📖](llmrouter/models/graphrouter/README.md) |
+| `causallm_router` | ✅ | ✅ | Causal Language Model router | [📖](llmrouter/models/causallm_router/README.md) |
 | `smallest_llm` | N/A | ✅ | Always routes to smallest model | [📖](llmrouter/models/smallest_llm/README.md) |
 | `largest_llm` | N/A | ✅ | Always routes to largest model | [📖](llmrouter/models/largest_llm/README.md) |
 
 ### Multi-Round Routers
 | Router | Training | Inference | Description | Tutorial |
 |--------|:--------:|:---------:|-------------|:--------:|
-| [`router_r1`](https://arxiv.org/abs/2506.09033) | [LINK](https://github.com/ulab-uiuc/Router-R1) | ✅ | Pre-trained Router-R1 model for multi-turn conversations | [📖](llmrouter/models/router_r1/README.md) |
+| `router_r1` | [LINK](https://github.com/ulab-uiuc/Router-R1) | ✅ | Pre-trained Router-R1 model for multi-turn conversations | [📖](llmrouter/models/router_r1/README.md) |
 
 ### Personalized Routers
 | Router | Training | Inference | Description | Tutorial |
 |--------|:--------:|:---------:|-------------|:--------:|
-| [`gmtrouter`](https://arxiv.org/abs/2511.08590) | ✅ | ✅ | Graph-based personalized router with user preference learning | [📖](llmrouter/models/gmtrouter/README.md) |
+| `gmtrouter` | ✅ | ✅ | Graph-based personalized router with user preference learning | [📖](llmrouter/models/gmtrouter/README.md) |
 
 ### Agentic Routers
 | Router | Training | Inference | Description | Tutorial |
 |--------|:--------:|:---------:|-------------|:--------:|
-| [`knnmultiroundrouter`](https://arxiv.org/abs/2506.09033) | ✅ | ✅ | KNN-based agentic router for complex tasks | [📖](llmrouter/models/knnmultiroundrouter/README.md) |
-| [`llmmultiroundrouter`](https://arxiv.org/abs/2506.09033) | N/A | ✅ | LLM-based agentic router for complex tasks | [📖](llmrouter/models/llmmultiroundrouter/README.md) |
+| `knnmultiroundrouter` | ✅ | ✅ | KNN-based agentic router for complex tasks | [📖](llmrouter/models/knnmultiroundrouter/README.md) |
+| `llmmultiroundrouter` | N/A | ✅ | LLM-based agentic router for complex tasks | [📖](llmrouter/models/llmmultiroundrouter/README.md) |
 
 ## Get Started 🚀
 
