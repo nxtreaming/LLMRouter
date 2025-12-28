@@ -38,8 +38,19 @@ notebooks/
 ├── gmtrouter/                 # Graph-based Multi-Turn Router
 │   ├── 01_gmtrouter_training.ipynb
 │   └── 02_gmtrouter_inference.ipynb
-└── elorouter/                 # Elo Rating Router (inference only)
-    └── 01_elorouter_inference.ipynb
+├── elorouter/                 # Elo Rating Router (inference only)
+│   └── 01_elorouter_inference.ipynb
+├── smallest_llm/              # SmallestLLM Baseline (inference only)
+│   └── 01_smallest_llm_inference.ipynb
+├── largest_llm/               # LargestLLM Baseline (inference only)
+│   └── 01_largest_llm_inference.ipynb
+├── router_r1/                 # RouterR1 Agentic Router (inference only)
+│   └── 01_router_r1_inference.ipynb
+├── knnmultiroundrouter/       # KNN Multi-Round Router
+│   ├── 01_knnmultiroundrouter_training.ipynb
+│   └── 02_knnmultiroundrouter_inference.ipynb
+└── llmmultiroundrouter/       # LLM Multi-Round Router (inference only)
+    └── 01_llmmultiroundrouter_inference.ipynb
 ```
 
 ## Quick Start
@@ -92,6 +103,11 @@ jupyter notebook 02_knnrouter_inference.ipynb
 | HybridLLMRouter | MLP | Yes | No | Binary routing |
 | GMTRouter | HeteroGNN | Yes | Recommended | Personalized multi-turn |
 | EloRouter | Rating-based | No | No | Baseline/simple cases |
+| SmallestLLM | Baseline | No | No | Cost-efficiency baseline |
+| LargestLLM | Baseline | No | No | Performance upper bound |
+| RouterR1 | Agentic | No | Required | Complex reasoning |
+| KNNMultiRoundRouter | Multi-Round KNN | Yes | No | Multi-step queries |
+| LLMMultiRoundRouter | Multi-Round LLM | No | Optional | Zero-shot multi-round |
 
 ## Using with Google Colab
 
