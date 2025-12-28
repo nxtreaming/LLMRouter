@@ -34,8 +34,8 @@
 - [Installation](#installation)
 - [Use Your Own Dataset](#preparing-training-data-)
 - [Training a Router](#training-a-router)
-- [Running Inference](#running-inference)
-- [Interactive Chat Interface](#interactive-chat-interface)
+- [Running Inference via a Router](#running-inference)
+- [Interactive Chat Interface with a Router](#interactive-chat-interface)
 - [Creating Your Own Routers](#-creating-custom-routers)
 - [Citation](#citation-)
 
