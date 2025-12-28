@@ -1,6 +1,4 @@
 from .data import (
-    Profile,
-    Data,
     # Data format types and validators
     DataFormatType,
     RouterDataFormat,
@@ -21,8 +19,6 @@ from .data import (
 from .data_loader import DataLoader
 
 __all__ = [
-    "Profile",
-    "Data",
     "DataLoader",
     # Data format types
     "DataFormatType",
