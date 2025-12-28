@@ -6,14 +6,14 @@ The **SVM Router** (Support Vector Machine Router) is a supervised learning-base
 
 ## Paper Reference
 
-This router implements **Support Vector Machine (SVM)** classification for LLM routing:
+This router implements **Support Vector Machine (SVM)** classification for LLM routing, as described in:
+
+- **[FusionFactory: Fusing LLM Capabilities with Multi-LLM Log Data](https://arxiv.org/abs/2507.10540)**
+  - Feng, T., Zhang, H., Lei, Z., et al. (2025). arXiv:2507.10540.
+  - Proposes query-level fusion via tailored LLM routers including SVM-based approaches.
 
 - **Original SVM Papers**:
-  - Cortes, C., & Vapnik, V. (1995). "Support-vector networks." Machine Learning, 20(3), 273-297.
-  - Boser, B. E., Guyon, I. M., & Vapnik, V. N. (1992). "A training algorithm for optimal margin classifiers." COLT.
-
-- **Kernel Methods**:
-  - Schölkopf, B., & Smola, A. J. (2002). "Learning with Kernels: Support Vector Machines, Regularization, Optimization, and Beyond." MIT Press.
+  - Cortes, C., & Vapnik, V. (1995). "Support-vector networks." Machine Learning.
 
 - **Application**: SVMs are particularly effective for high-dimensional data and non-linearly separable classes, making them well-suited for routing based on query embeddings.
 

@@ -6,11 +6,14 @@ The **KNN Router** (K-Nearest Neighbors Router) is an instance-based routing met
 
 ## Paper Reference
 
-This router implements the **K-Nearest Neighbors (KNN)** algorithm for classification:
+This router implements the **K-Nearest Neighbors (KNN)** algorithm for LLM routing, as described in:
+
+- **[FusionFactory: Fusing LLM Capabilities with Multi-LLM Log Data](https://arxiv.org/abs/2507.10540)**
+  - Feng, T., Zhang, H., Lei, Z., et al. (2025). arXiv:2507.10540.
+  - Proposes query-level fusion via tailored LLM routers including KNN-based approaches.
 
 - **Original KNN Concept**:
-  - Cover, T., & Hart, P. (1967). "Nearest neighbor pattern classification." IEEE Transactions on Information Theory, 13(1), 21-27.
-  - Fix, E., & Hodges, J. L. (1951). "Discriminatory analysis. Nonparametric discrimination: Consistency properties." Technical Report, USAF School of Aviation Medicine.
+  - Cover, T., & Hart, P. (1967). "Nearest neighbor pattern classification." IEEE Transactions on Information Theory.
 
 - **Application to Routing**: KNN is a lazy learning algorithm that makes routing decisions by finding the K most similar historical queries and voting for the best LLM based on their performance.
 

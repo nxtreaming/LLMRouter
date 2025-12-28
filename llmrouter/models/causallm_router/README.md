@@ -6,11 +6,14 @@ The **Causal LM Router** uses a finetuned causal language model to predict the b
 
 ## Paper Reference
 
-This router is inspired by **instruction-finetuned LLMs** and prompt-based routing:
+This router is inspired by **RouteLLM** and LLM-based classification:
 
-- **LLM Finetuning**: Adapts pre-trained models like Llama-2-7B to routing tasks
+- **[RouteLLM: Learning to Route LLMs with Preference Data](https://arxiv.org/abs/2406.18665)**
+  - Ong, I., et al. (2024). arXiv:2406.18665. Published at ICLR 2025.
+  - Implements `causal_llm` router using LLM-based classifier tuned on preference data.
+
 - **LoRA**: Hu, E. J., et al. (2021). "LoRA: Low-Rank Adaptation of Large Language Models." ICLR.
-- **Key Idea**: Treat routing as conditional text generation
+- **Key Idea**: Treat routing as conditional text generation.
 
 ## How It Works
 

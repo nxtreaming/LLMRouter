@@ -108,7 +108,7 @@ def parse_choices(choices_str: str) -> Optional[Dict]:
             choices = ast.literal_eval(choices_str)
             return choices
         return choices_str
-    except:
+    except (ValueError, SyntaxError, TypeError):
         return None
 
 

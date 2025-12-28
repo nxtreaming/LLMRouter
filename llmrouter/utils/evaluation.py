@@ -4,7 +4,7 @@ import re
 import string
 import pickle
 from collections import Counter
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -37,7 +37,7 @@ def savejson(data: dict, filename: str) -> None:
         json.dump(data, json_file, indent=4)
 
 
-def loadpkl(filename: str) -> any:
+def loadpkl(filename: str) -> Any:
     """
     Load data from a pickle file.
 
@@ -52,7 +52,7 @@ def loadpkl(filename: str) -> any:
     return data
 
 
-def savepkl(data: any, filename: str) -> None:
+def savepkl(data: Any, filename: str) -> None:
     """
     Save data to a pickle file.
 
@@ -191,17 +191,35 @@ def is_equiv(str1, str2, verbose=False):
 
 
 def remove_boxed(s):
+    """Remove \\boxed{} wrapper from LaTeX string."""
     if "\\boxed " in s:
         left = "\\boxed "
-        assert s[:len(left)] == left
-        return s[len(left):]
+        if s[:len(left)] == left:
+            return s[len(left):]
+        # If doesn't start with \boxed but contains it, try to extract
+        idx = s.find(left)
+        if idx >= 0:
+            return s[idx + len(left):]
 
     left = "\\boxed{"
+    if s[:len(left)] == left and s[-1] == "}":
+        return s[len(left):-1]
 
-    assert s[:len(left)] == left
-    assert s[-1] == "}"
+    # Try to find and extract \boxed{...} anywhere in string
+    idx = s.find(left)
+    if idx >= 0:
+        # Find matching closing brace
+        depth = 0
+        start = idx + len(left)
+        for i in range(start, len(s)):
+            if s[i] == '{':
+                depth += 1
+            elif s[i] == '}':
+                if depth == 0:
+                    return s[start:i]
+                depth -= 1
 
-    return s[len(left):-1]
+    return s  # Return original if no valid boxed content found
 
 
 def last_boxed_only_string(string):
@@ -282,13 +300,14 @@ def fix_a_slash_b(string):
 
 
 def remove_right_units(string):
+    """Remove units from LaTeX string (e.g., \\text{ meters})."""
     # "\\text{ " only ever occurs (at least in the val set) when describing units
     if "\\text{ " in string:
         splits = string.split("\\text{ ")
-        assert len(splits) == 2
-        return splits[0]
-    else:
-        return string
+        if len(splits) >= 2:
+            return splits[0]
+        # If only one part, return as-is
+    return string
 
 
 def fix_sqrt(string):

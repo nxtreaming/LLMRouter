@@ -6,8 +6,13 @@ The **KNN Multi-Round Router** extends the standard KNN router with a multi-roun
 
 ## Paper Reference
 
-Combines **K-Nearest Neighbors** with **query decomposition**:
+This router implements multi-round routing as described in:
 
+- **[Router-R1: Teaching LLMs Multi-Round Routing and Aggregation via Reinforcement Learning](https://arxiv.org/abs/2506.09033)**
+  - Zhang, H., Feng, T., & You, J. (2025). arXiv:2506.09033.
+  - Proposes multi-round routing with decomposition and aggregation.
+
+Combines **K-Nearest Neighbors** with **query decomposition**:
 - **KNN**: Instance-based learning, no training required
 - **Query Decomposition**: Break complex queries into simpler sub-tasks
 - **Multi-Agent**: Delegate sub-queries to specialized models

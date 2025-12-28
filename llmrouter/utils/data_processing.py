@@ -138,8 +138,6 @@ def process_unified_embeddings_and_routing(
     
     # Step 2: Generate embeddings for all unique queries
     print("Generating embeddings for all unique queries...")
-    from llmrouter.utils.data_processing import generate_embeddings_for_data
-    
     embedding_results = generate_embeddings_for_data(all_queries, "Generating unified embeddings")
     
     # Step 3: Create embedding mapping and .pt file
@@ -226,9 +224,8 @@ def process_unified_embeddings_and_routing(
                     # Try to parse as JSON first
                     parsed = json.loads(record['choices'])
                     # Convert back to Python dict string format (matches sample)
-                    import ast
                     record['choices'] = str(parsed).replace("'", "'")  # Keep single quotes
-                except:
+                except (json.JSONDecodeError, ValueError, TypeError):
                     # Already in Python format or invalid - keep as is
                     pass
             elif isinstance(record['choices'], (dict, list)):

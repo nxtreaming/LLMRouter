@@ -8,9 +8,11 @@ The **MF Router** (Matrix Factorization Router) uses bilinear matrix factorizati
 
 This router is inspired by **RouteLLM** and matrix factorization approaches:
 
-- **RouteLLM**: Ong, Isaac, et al. (2024). "RouteLLM: Learning to Route LLMs with Preference Data." arXiv preprint arXiv:2406.18665.
+- **[RouteLLM: Learning to Route LLMs with Preference Data](https://arxiv.org/abs/2406.18665)**
+  - Ong, I., et al. (2024). arXiv:2406.18665. Published at ICLR 2025.
+  - Proposes matrix factorization router trained on human preference data.
+
 - **Matrix Factorization**: Koren, Y., Bell, R., & Volinsky, C. (2009). "Matrix factorization techniques for recommender systems." Computer.
-- **Key Idea**: Learn latent representations that capture query-model compatibility
 
 The approach treats LLM routing as a recommendation problem: given a query, recommend the best-performing model.
 

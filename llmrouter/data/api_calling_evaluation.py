@@ -322,7 +322,10 @@ def generate_responses(base_df, router_manager, max_workers=100):
     print(f"Unique models: {len(result_df['model_name'].unique())}")
     
     # Error analysis
-    error_count = len(result_df[result_df['response'].str.startswith('ERROR')])
+    error_count = len(result_df[
+        result_df['response'].str.startswith('ERROR') |
+        result_df['response'].str.startswith('API Error')
+    ])
     success_rate = ((len(result_df) - error_count) / len(result_df)) * 100
     print(f"Success rate: {success_rate:.2f}% ({len(result_df) - error_count}/{len(result_df)})")
     
@@ -432,12 +435,12 @@ def eval_perf(metric, prediction, ground_truth, task_name, task_id=None):
             else:
                 code = prediction.strip()
              
-            dict = {"task_id": task_id, "completion": code}
+            code_dict = {"task_id": task_id, "completion": code}
             if entry_point_item is None:
                 raise ImportError(
                     "HumanEval evaluation helpers not available. Ensure repo `data/human_eval` is importable (e.g., run from repo root)."
                 )
-            pass_1 = entry_point_item(dict, '/data/taofeng2/Router_bench/dataset/Code/HumanEval.jsonl')
+            pass_1 = entry_point_item(code_dict, '/data/taofeng2/Router_bench/dataset/Code/HumanEval.jsonl')
             return pass_1['pass@1']
 
     # Default case for unrecognized metrics
@@ -579,7 +582,7 @@ def load_query_data_jsonl(file_path: str) -> List[Dict]:
                 if 'choices' in record and isinstance(record['choices'], str):
                     try:
                         record['choices'] = json.loads(record['choices'])
-                    except:
+                    except (json.JSONDecodeError, ValueError, TypeError):
                         record['choices'] = None
                 data.append(record)
     return data
