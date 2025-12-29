@@ -48,7 +48,7 @@
 - [Running Inference via a Router](#running-inference)
 - [Interactive Chat Interface with a Router](#interactive-chat-interface)
 - [Creating Your Own Routers](#-creating-custom-routers)
-- [Creating Custom Tasks](#-creating-custom-tasks)
+- [Adding Your Own Tasks](#-adding-your-own-tasks)
 - [Acknowledgments](#-acknowledgments)
 - [Citation](#-citation)
 
@@ -467,7 +467,7 @@ def route_single(self, query_input):
             return {"model_name": model_name}
 ```
 
-## 📝 Creating Custom Tasks
+## 📝 Adding Your Own Tasks
 
 LLMRouter supports **custom task definitions** that allow you to add new task types with custom prompt templates and evaluation metrics. Custom tasks are automatically discovered and integrated into the data generation and evaluation pipeline.
 
