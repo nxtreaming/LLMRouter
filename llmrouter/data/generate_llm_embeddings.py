@@ -64,6 +64,7 @@ def generate_llm_embeddings(llm_data: Dict, output_path: str):
                 'input_price': model_info.get('input_price', 0.0),
                 'output_price': model_info.get('output_price', 0.0),
                 'model': model_info.get('model', ''),
+                'api_endpoint': model_info.get('api_endpoint', ''),
                 'embedding': embedding.tolist() if hasattr(embedding, 'tolist') else list(embedding)
             }
             

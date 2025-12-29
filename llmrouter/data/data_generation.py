@@ -13,7 +13,7 @@ Usage:
     python data_generation.py --sample N --output_train PATH --output_test PATH
     
 Examples:
-    python data_generation.py --config configs/data_generation.yaml
+    python data_generation.py --config llmrouter/data/sample_config.yaml
     python data_generation.py --sample 100 --output_train data/query_train.jsonl --output_test data/query_test.jsonl
     python data_generation.py --sample 10 --test  # Quick test with 10 samples
 """

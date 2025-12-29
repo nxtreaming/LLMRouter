@@ -12,7 +12,7 @@ Usage:
     python api_calling_evaluation.py --config config.yaml [--workers N] [--test]
     
 Examples:
-    python api_calling_evaluation.py --config configs/data_generation.yaml
+    python api_calling_evaluation.py --config llmrouter/data/sample_config.yaml
     python api_calling_evaluation.py --config config.yaml --workers 50
     python api_calling_evaluation.py --config config.yaml --test
 """

@@ -425,14 +425,14 @@ with open("default_routing_train_data.jsonl", "r") as f:
 
 ```bash
 # Step 1: Generate query data
-python llmrouter/data/data_generation.py --config configs/data_generation.yaml
+python llmrouter/data/data_generation.py --config llmrouter/data/sample_config.yaml
 
 # Step 2: Generate LLM embeddings
-python llmrouter/data/generate_llm_embeddings.py --config configs/data_generation.yaml
+python llmrouter/data/generate_llm_embeddings.py --config llmrouter/data/sample_config.yaml
 
 # Step 3: API calling and evaluation (requires API_KEYS env var)
 export API_KEYS='["your-key-1", "your-key-2"]'
-python llmrouter/data/api_calling_evaluation.py --config configs/data_generation.yaml --workers 100
+python llmrouter/data/api_calling_evaluation.py --config llmrouter/data/sample_config.yaml --workers 100
 ```
 
 ### Quick Test Run
