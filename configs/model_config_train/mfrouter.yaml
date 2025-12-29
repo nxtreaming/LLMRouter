@@ -23,9 +23,10 @@ metric:
 
 hparam:
   latent_dim: 128         # dimension of model embedding v_m
-  text_dim: 768         # Longformer embedding dimension
+  text_dim: 768           # Longformer embedding dimension
   lr: 0.001               # learning rate
   epochs: 5               # number of training epochs
+  batch_size: 64          # batch size for training (larger = faster but more memory)
   noise_alpha: 0.0        # optional noise added to query embeddings
 
 

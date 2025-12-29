@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
 
 from llmrouter.models.base_trainer import BaseTrainer
 from llmrouter.utils import save_model, get_longformer_embedding
@@ -9,11 +10,48 @@ from llmrouter.utils import save_model, get_longformer_embedding
 from .router import BilinearMF
 
 
+class PairwiseDataset(Dataset):
+    """Dataset for pairwise training samples."""
+
+    def __init__(self, pairs, query_embedding_data=None):
+        self.pairs = pairs
+        self.query_embedding_data = query_embedding_data
+        self.use_precomputed = query_embedding_data is not None
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def __getitem__(self, idx):
+        sample = self.pairs[idx]
+        winner = sample["winner"]
+        loser = sample["loser"]
+
+        # Get embedding
+        if self.use_precomputed and "embedding_id" in sample:
+            emb = self.query_embedding_data[sample["embedding_id"]]
+            if isinstance(emb, np.ndarray):
+                emb = torch.from_numpy(emb).float()
+            else:
+                emb = emb.float()
+        else:
+            # Fallback: return query text for on-the-fly computation
+            # This path is slower but still supported
+            emb = get_longformer_embedding(sample["query"]).float()
+
+        return {
+            "winner": torch.tensor(winner, dtype=torch.long),
+            "loser": torch.tensor(loser, dtype=torch.long),
+            "embedding": emb,
+        }
+
+
 class MFRouterTrainer(BaseTrainer):
     """
     MFRouterTrainer
     Trains BilinearMF using pairwise logistic loss:
         L = BCE( δ(win,q) − δ(loss,q), 1 )
+
+    Supports batch training for faster convergence.
     """
 
     def __init__(self, router, optimizer=None, device="cpu"):
@@ -47,6 +85,7 @@ class MFRouterTrainer(BaseTrainer):
         self.lr = hparam.get("lr", 1e-3)
         self.epochs = hparam.get("epochs", 3)
         self.noise_alpha = hparam.get("noise_alpha", 0.0)
+        self.batch_size = hparam.get("batch_size", 64)
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
@@ -54,53 +93,51 @@ class MFRouterTrainer(BaseTrainer):
             print("[MFRouterTrainer] Initialized with precomputed embeddings (fast mode).")
         else:
             print("[MFRouterTrainer] Initialized (will compute embeddings on-the-fly).")
+        print(f"[MFRouterTrainer] Batch size: {self.batch_size}")
 
     # ---------------------------------------------------------
-    # Query embedding (precomputed or on-the-fly)
-    # ---------------------------------------------------------
-    def embed_query_by_id(self, embedding_id: int):
-        """Get embedding by ID from precomputed data."""
-        emb = self.query_embedding_data[embedding_id]
-        if isinstance(emb, np.ndarray):
-            emb = torch.from_numpy(emb)
-        return emb.float().to(self.device)
-
-    def embed_query(self, text: str):
-        """Compute embedding on-the-fly using Longformer (slow fallback)."""
-        emb = get_longformer_embedding(text).numpy()
-        return torch.tensor(emb, dtype=torch.float32).to(self.device)
-
-    # ---------------------------------------------------------
-    # Full training loop
+    # Full training loop with batch processing
     # ---------------------------------------------------------
     def train(self):
         model = self.model
         optimizer = self.optimizer
         loss_fn = nn.BCEWithLogitsLoss()
-        use_precomputed = self.query_embedding_data is not None
+
+        # Create dataset and dataloader for efficient batch training
+        dataset = PairwiseDataset(self.pairs, self.query_embedding_data)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=0,  # Keep 0 for compatibility with precomputed embeddings
+            pin_memory=(self.device != "cpu"),
+        )
+
+        num_batches = len(dataloader)
+        print(f"[MFRouterTrainer] Training with {len(self.pairs)} samples, "
+              f"{num_batches} batches per epoch")
 
         for epoch in range(self.epochs):
-            np.random.shuffle(self.pairs)
             epoch_losses = []
 
-            for sample in self.pairs:
-                win_id = torch.tensor([sample["winner"]], dtype=torch.long, device=model.device)
-                loss_id = torch.tensor([sample["loser"]], dtype=torch.long, device=model.device)
+            for batch in dataloader:
+                # Move batch to device
+                win_ids = batch["winner"].to(self.device)
+                loss_ids = batch["loser"].to(self.device)
+                q_emb = batch["embedding"].to(self.device)
 
-                # Use precomputed embedding if available (much faster)
-                if use_precomputed and "embedding_id" in sample:
-                    q_emb = self.embed_query_by_id(sample["embedding_id"])
-                else:
-                    q_emb = self.embed_query(sample["query"])
-
+                # Project embeddings
                 q_emb_proj = model.project_text(q_emb)
 
+                # Optional noise for regularization
                 if self.noise_alpha > 0:
                     q_emb_proj = q_emb_proj + torch.randn_like(q_emb_proj) * self.noise_alpha
 
-                logit = model(win_id, loss_id, q_emb_proj)
+                # Forward pass (batched)
+                logit = model(win_ids, loss_ids, q_emb_proj)
                 target = torch.ones_like(logit)
 
+                # Backward pass
                 optimizer.zero_grad()
                 loss = loss_fn(logit, target)
                 loss.backward()

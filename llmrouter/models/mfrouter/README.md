@@ -67,6 +67,7 @@ Where:
 | `text_dim` | int | `768` | Dimension of Longformer query embeddings (fixed at 768). |
 | `lr` | float | `0.001` | Learning rate for Adam optimizer. Typical range: 0.0001-0.01. |
 | `epochs` | int | `5` | Number of training epochs. Increase for larger datasets. |
+| `batch_size` | int | `64` | Batch size for training. Larger values speed up training but use more memory. Range: 32-256. |
 | `noise_alpha` | float | `0.0` | Optional Gaussian noise added to query embeddings for regularization. Range: 0.0-0.1. |
 
 ### Data Paths
@@ -185,6 +186,7 @@ hparam:
   text_dim: 768
   lr: 0.001
   epochs: 5
+  batch_size: 64
   noise_alpha: 0.0
 
 metric:
