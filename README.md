@@ -62,7 +62,7 @@
 | `mfrouter` | ✅ | ✅ | Matrix Factorization based routing | [📖](llmrouter/models/mfrouter/README.md) |
 | `elorouter` | ✅ | ✅ | Elo Rating based routing | [📖](llmrouter/models/elorouter/README.md) |
 | `routerdc` | ✅ | ✅ | Dual Contrastive learning based routing | [📖](llmrouter/models/routerdc/README.md) |
-| `automix` | N/A | ✅ | Automatic model mixing | [📖](llmrouter/models/automix/README.md) |
+| `automix` | ✅ | ✅ | Automatic model mixing | [📖](llmrouter/models/automix/README.md) |
 | `hybrid_llm` | ✅ | ✅ | Hybrid LLM routing strategy | [📖](llmrouter/models/hybrid_llm/README.md) |
 | `graphrouter` | ✅ | ✅ | Graph-based routing | [📖](llmrouter/models/graphrouter/README.md) |
 | `causallm_router` | ✅ | ✅ | Causal Language Model router | [📖](llmrouter/models/causallm_router/README.md) |
