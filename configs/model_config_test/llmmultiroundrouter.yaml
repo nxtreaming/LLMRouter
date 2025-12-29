@@ -21,7 +21,7 @@ data_path:
 # No model_path needed for LLM-based routing (no trained model)
 
 # Configuration for full pipeline processing
-base_model: 'Qwen/Qwen2.5-3B-Instruct'  # Model for decomposition+routing and aggregation
+base_model: 'meta/llama-3.1-8b-instruct'  # Model for decomposition+routing and aggregation
 use_local_llm: false  # Set to true to use vLLM for local inference (requires vLLM installed)
 api_endpoint: 'https://integrate.api.nvidia.com/v1'  # API endpoint for execution
 
