@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 import torch
 import torch.nn as nn
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoConfig
 
 from llmrouter.models.router_r1.prompt_pool import *
 from llmrouter.models.meta_router import MetaRouter
@@ -47,6 +47,65 @@ def _get_api_key_from_env():
     # Single key
     return api_keys
 
+
+def _get_tensor_parallel_size(model_id: str) -> int:
+    """Infer a safe tensor_parallel_size based on visible GPUs and model heads.
+
+    Override with env var `LLMROUTER_TENSOR_PARALLEL_SIZE`.
+    """
+    override = (os.environ.get("LLMROUTER_TENSOR_PARALLEL_SIZE") or "").strip()
+    if override:
+        try:
+            tp = int(override)
+            if tp < 1:
+                raise ValueError("must be >= 1")
+            gpu_count = torch.cuda.device_count()
+            if gpu_count > 0 and tp > gpu_count:
+                raise ValueError(f"override {tp} exceeds visible GPUs {gpu_count}")
+            return tp
+        except Exception as e:
+            print(
+                f"Warning: invalid LLMROUTER_TENSOR_PARALLEL_SIZE={override!r}: {e}. "
+                "Falling back to auto."
+            )
+
+    gpu_count = torch.cuda.device_count()
+    if gpu_count <= 1:
+        return 1
+
+    try:
+        config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+    except Exception as e:
+        print(f"Warning: failed to load model config for tensor parallel sizing: {e}. Using single GPU.")
+        return 1
+
+    num_heads = getattr(config, "num_attention_heads", None) or getattr(config, "n_head", None)
+    num_kv_heads = (
+        getattr(config, "num_key_value_heads", None)
+        or getattr(config, "num_kv_heads", None)
+        or getattr(config, "n_kv_head", None)
+    )
+
+    if not isinstance(num_heads, int) or num_heads <= 0:
+        print("Warning: model config missing num_attention_heads; using single GPU.")
+        return 1
+
+    def _is_divisible(tp: int) -> bool:
+        if num_heads % tp != 0:
+            return False
+        if isinstance(num_kv_heads, int) and num_kv_heads > 0 and num_kv_heads % tp != 0:
+            return False
+        return True
+
+    for tp in range(gpu_count, 1, -1):
+        if _is_divisible(tp):
+            return tp
+
+    print(
+        f"Warning: attention heads (num_heads={num_heads}, num_kv_heads={num_kv_heads}) "
+        f"not divisible by visible GPUs ({gpu_count}); using single GPU."
+    )
+    return 1
 
 class RouterR1(MetaRouter):
     """
@@ -149,10 +208,8 @@ class RouterR1(MetaRouter):
         # Model path and tokenizer
         tokenizer = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=True)
 
-        # Use single GPU by default (tensor_parallel_size=1)
-        # Multi-GPU parallelism requires attention heads divisible by GPU count
-        # For 3B models, single GPU is sufficient
-        tensor_parallel_size = 1
+        # Choose tensor_parallel_size based on visible GPUs and model heads.
+        tensor_parallel_size = _get_tensor_parallel_size(self.model_id)
         llm = LLM(model=self.model_id, dtype="float16", tensor_parallel_size=tensor_parallel_size)
 
         curr_route_template = '\n{output_text}\n<information>{route_results}</information>\n'

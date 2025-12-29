@@ -18,6 +18,7 @@ authors = [
 dependencies = [
   "torch>=2.0",
   "transformers>=4.40",
+  "sentencepiece>=0.1.99",
   "numpy>=1.21",
   "pandas>=1.5",
   "scikit-learn>=1.2",
@@ -52,9 +53,9 @@ classifiers = [
 
 [project.optional-dependencies]
 # RouterR1 requires vLLM (GPU only)
-router-r1 = ["vllm>=0.4", "openai>=1.0"]
+router-r1 = ["vllm==0.6.3", "torch==2.4.0", "openai>=1.0"]
 # All optional dependencies
-all = ["vllm>=0.4", "openai>=1.0"]
+all = ["vllm==0.6.3", "torch==2.4.0", "openai>=1.0"]
 
 [project.scripts]
 llmrouter = "llmrouter.cli.router_main:main"

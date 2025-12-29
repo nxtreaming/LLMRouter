@@ -103,13 +103,13 @@ llmrouter infer --router router_r1 --config configs/model_config_test/router_r1.
 ### Dependencies
 
 Router-R1 requires:
-- **vLLM**: For efficient local LLM inference with GPU
+- **vLLM==0.6.3**: For efficient local LLM inference with GPU (requires torch==2.4.0)
 - **CUDA**: GPU required (CPU not supported)
-- **openai**: For routing pool API calls (in `route_service.py`)
+- **openai>=1.0**: For routing pool API calls (in `route_service.py`)
 
 Install with:
 ```bash
-pip install vllm openai
+pip install vllm==0.6.3 torch==2.4.0 openai
 ```
 
 ### Model Support
@@ -275,7 +275,8 @@ hparam:
    - Experiment with temperature (default: 1.0)
 
 4. **Resource Management**:
-   - Use tensor_parallel_size=max(1, num_gpus) for multi-GPU
+   - RouterR1 auto-selects `tensor_parallel_size` based on visible GPUs and attention head divisibility
+   - Override with `LLMROUTER_TENSOR_PARALLEL_SIZE=<int>` to force a fixed value
    - Monitor VRAM usage and adjust model size accordingly
    - Consider batching queries for better GPU utilization
 

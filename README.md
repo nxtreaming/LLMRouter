@@ -106,6 +106,7 @@ conda activate llmrouter
 pip install -e .
 
 # Optional: Install with RouterR1 support (requires GPU)
+# RouterR1 is tested with vllm==0.6.3 (torch==2.4.0); the extra pins these versions.
 pip install -e ".[router-r1]"
 
 # Optional: Install all optional dependencies

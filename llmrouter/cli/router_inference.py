@@ -9,10 +9,22 @@ import atexit
 import argparse
 import json
 import os
+import multiprocessing as mp
 import sys
 import yaml
 from typing import Dict, Any, Optional, List
 from pathlib import Path
+
+def _configure_multiprocessing() -> None:
+    """Ensure CUDA-safe multiprocessing for vLLM workers."""
+    os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+    try:
+        mp.set_start_method("spawn")
+    except RuntimeError:
+        pass
+
+
+_configure_multiprocessing()
 
 # Import router classes
 from llmrouter.models import (
