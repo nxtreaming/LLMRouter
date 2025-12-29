@@ -30,6 +30,7 @@ dependencies = [
   "peft>=0.7",
   "torch-geometric>=2.3",
   "scipy>=1.10",
+  "protobuf>=3.20",
 ]
 
 classifiers = [
