@@ -64,8 +64,29 @@ Total cost = prompt_tokens + completion_tokens + route_tokens
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `model_id` | str | Yes | HuggingFace model ID for vLLM (e.g., `"Qwen/Qwen2.5-7B-Instruct"`) |
-| `api_base` | str | Yes | Base URL for the routing pool API |
-| `api_key` | str | Yes | API key for accessing the routing pool |
+| `api_base` | str | Yes* | Base URL for the routing pool API |
+| `api_key` | str | Yes* | API key for accessing the routing pool |
+
+*Can be set via environment variables instead of YAML config.
+
+### Environment Variables
+
+Instead of setting `api_base` and `api_key` in the YAML config, you can use environment variables:
+
+| Config Key | Environment Variables (checked in order) |
+|------------|------------------------------------------|
+| `api_key` | `OPENAI_API_KEY`, `NVIDIA_API_KEY`, `NVAPI_KEY`, `ROUTER_API_KEY` |
+| `api_base` | `OPENAI_API_BASE`, `NVIDIA_API_BASE`, `ROUTER_API_BASE` |
+
+**Example:**
+```bash
+export OPENAI_API_KEY='your-api-key'
+export OPENAI_API_BASE='https://api.openai.com/v1'
+
+# Now you can run without setting api_key/api_base in YAML
+llmrouter infer --router router_r1 --config configs/model_config_test/router_r1.yaml \
+    --query "Explain transformers"
+```
 
 ### Dependencies
 
