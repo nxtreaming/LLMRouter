@@ -85,18 +85,20 @@ class MFRouter(MetaRouter):
         self.model_to_idx = {m: i for i, m in enumerate(models)}
         self.idx_to_model = {i: m for m, i in self.model_to_idx.items()}
 
-        # Construct pairwise samples
+        # Construct pairwise samples with embedding_id for fast lookup
         self.pairs = []
         grouped = routing.groupby("query")
         for q, df in grouped:
             best_row = df.loc[df["performance"].idxmax()]
             winner_id = self.model_to_idx[best_row["model_name"]]
+            embedding_id = int(best_row["embedding_id"])
 
             for _, row in df.iterrows():
                 loser_id = self.model_to_idx[row["model_name"]]
                 if loser_id != winner_id:
                     self.pairs.append({
                         "query": q,
+                        "embedding_id": embedding_id,
                         "winner": winner_id,
                         "loser": loser_id
                     })

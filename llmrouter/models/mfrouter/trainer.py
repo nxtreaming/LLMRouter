@@ -23,6 +23,10 @@ class MFRouterTrainer(BaseTrainer):
         self.pairs = router.pairs
         self.dim = router.dim
         self.text_dim = router.text_dim
+        self.device = device
+
+        # Use precomputed embeddings if available (much faster than calling Longformer)
+        self.query_embedding_data = getattr(router, 'query_embedding_data', None)
 
         # -----------------------
         # MATCH mlptrainer.py: save path only
@@ -46,14 +50,25 @@ class MFRouterTrainer(BaseTrainer):
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
-        print("[MFRouterTrainer] Initialized.")
+        if self.query_embedding_data is not None:
+            print("[MFRouterTrainer] Initialized with precomputed embeddings (fast mode).")
+        else:
+            print("[MFRouterTrainer] Initialized (will compute embeddings on-the-fly).")
 
     # ---------------------------------------------------------
-    # Longformer query embedding
+    # Query embedding (precomputed or on-the-fly)
     # ---------------------------------------------------------
+    def embed_query_by_id(self, embedding_id: int):
+        """Get embedding by ID from precomputed data."""
+        emb = self.query_embedding_data[embedding_id]
+        if isinstance(emb, np.ndarray):
+            emb = torch.from_numpy(emb)
+        return emb.float().to(self.device)
+
     def embed_query(self, text: str):
+        """Compute embedding on-the-fly using Longformer (slow fallback)."""
         emb = get_longformer_embedding(text).numpy()
-        return torch.tensor(emb, dtype=torch.float32).to(self.model.device)
+        return torch.tensor(emb, dtype=torch.float32).to(self.device)
 
     # ---------------------------------------------------------
     # Full training loop
@@ -62,6 +77,7 @@ class MFRouterTrainer(BaseTrainer):
         model = self.model
         optimizer = self.optimizer
         loss_fn = nn.BCEWithLogitsLoss()
+        use_precomputed = self.query_embedding_data is not None
 
         for epoch in range(self.epochs):
             np.random.shuffle(self.pairs)
@@ -71,7 +87,12 @@ class MFRouterTrainer(BaseTrainer):
                 win_id = torch.tensor([sample["winner"]], dtype=torch.long, device=model.device)
                 loss_id = torch.tensor([sample["loser"]], dtype=torch.long, device=model.device)
 
-                q_emb = self.embed_query(sample["query"])
+                # Use precomputed embedding if available (much faster)
+                if use_precomputed and "embedding_id" in sample:
+                    q_emb = self.embed_query_by_id(sample["embedding_id"])
+                else:
+                    q_emb = self.embed_query(sample["query"])
+
                 q_emb_proj = model.project_text(q_emb)
 
                 if self.noise_alpha > 0:
