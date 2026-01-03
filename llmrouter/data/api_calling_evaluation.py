@@ -59,8 +59,10 @@ from llmrouter.utils import f1_score, exact_match_score, get_bert_score, evaluat
 from llmrouter.utils.evaluation import last_boxed_only_string, remove_boxed, is_equiv
 try:
     from human_eval.evaluate_functional_correctness import entry_point_item
+    from human_eval.data import HUMAN_EVAL as DEFAULT_HUMAN_EVAL_PATH
 except ImportError:  # pragma: no cover
     entry_point_item = None
+    DEFAULT_HUMAN_EVAL_PATH = None
 
 try:
     from mbpp.mbpp_eval import entry_point_item_mbpp
@@ -420,7 +422,18 @@ def eval_perf(metric, prediction, ground_truth, task_name, task_id=None):
                 raise ImportError(
                     "MBPP evaluation helpers not available. Ensure repo `data/mbpp` is importable (e.g., run from repo root)."
                 )
-            pass_1 = entry_point_item_mbpp(mbpp_sample, '/data/taofeng2/Router_bench/dataset/Code/mbpp.jsonl')
+            # Use relative path based on project root
+            mbpp_dataset_path = _PROJECT_ROOT / "data" / "mbpp.jsonl"
+            if not mbpp_dataset_path.exists():
+                # Try alternative location
+                mbpp_dataset_path = _PROJECT_ROOT / "data" / "mbpp" / "mbpp.jsonl"
+            if not mbpp_dataset_path.exists():
+                raise FileNotFoundError(
+                    f"MBPP dataset file not found. Expected at: {_PROJECT_ROOT / 'data' / 'mbpp.jsonl'} "
+                    f"or {_PROJECT_ROOT / 'data' / 'mbpp' / 'mbpp.jsonl'}. "
+                    f"Please download the MBPP dataset and place it in the data directory."
+                )
+            pass_1 = entry_point_item_mbpp(mbpp_sample, str(mbpp_dataset_path))
             return pass_1['pass@1']
 
         else:
@@ -440,7 +453,22 @@ def eval_perf(metric, prediction, ground_truth, task_name, task_id=None):
                 raise ImportError(
                     "HumanEval evaluation helpers not available. Ensure repo `data/human_eval` is importable (e.g., run from repo root)."
                 )
-            pass_1 = entry_point_item(code_dict, '/data/taofeng2/Router_bench/dataset/Code/HumanEval.jsonl')
+            # Use default path from human_eval.data, or construct relative path
+            if DEFAULT_HUMAN_EVAL_PATH and os.path.exists(DEFAULT_HUMAN_EVAL_PATH):
+                human_eval_path = DEFAULT_HUMAN_EVAL_PATH
+            else:
+                # Fallback: try relative path based on project root
+                human_eval_path = _PROJECT_ROOT / "data" / "HumanEval.jsonl.gz"
+                if not human_eval_path.exists():
+                    # Try uncompressed version
+                    human_eval_path = _PROJECT_ROOT / "data" / "HumanEval.jsonl"
+                if not human_eval_path.exists():
+                    raise FileNotFoundError(
+                        f"HumanEval dataset file not found. Expected at: {DEFAULT_HUMAN_EVAL_PATH if DEFAULT_HUMAN_EVAL_PATH else 'N/A'} "
+                        f"or {_PROJECT_ROOT / 'data' / 'HumanEval.jsonl.gz'}. "
+                        f"Please download the HumanEval dataset and place it in the data directory."
+                    )
+            pass_1 = entry_point_item(code_dict, str(human_eval_path))
             return pass_1['pass@1']
 
     # Default case for unrecognized metrics
