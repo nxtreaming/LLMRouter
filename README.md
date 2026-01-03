@@ -214,6 +214,32 @@ api_endpoint: 'https://integrate.api.nvidia.com/v1'  # Fallback for all models
 
 For details, see [Data Generation Pipeline documentation](llmrouter/data/README.md#llm-data-json-default_llmjson).
 
+### 🖥️ Using Local LLM Models
+
+LLMRouter supports locally hosted LLM inference servers that provide OpenAI-compatible APIs (e.g., Ollama, vLLM, SGLang). For local providers, you can use an empty string `""` as the API key value - the system automatically detects localhost endpoints and handles authentication accordingly.
+
+**Example with Ollama:**
+
+```bash
+export API_KEYS='{"Ollama": ""}'
+```
+
+```json
+{
+  "gemma3": {
+    "size": "3B",
+    "feature": "Gemma 3B model hosted locally via Ollama",
+    "input_price": 0.0,
+    "output_price": 0.0,
+    "model": "gemma3",
+    "service": "Ollama",
+    "api_endpoint": "http://localhost:11434/v1"
+  }
+}
+```
+
+**Important**: Use the `/v1` endpoint (OpenAI-compatible), not the native API endpoints. Empty strings are automatically detected for localhost endpoints (`localhost` or `127.0.0.1`).
+
 ### 📊 Preparing Training Data
 
 LLMRouter includes a complete data generation pipeline that transforms raw benchmark datasets into formatted routing data with embeddings. The pipeline supports 11 diverse benchmark datasets including Natural QA, Trivia QA, MMLU, GPQA, MBPP, HumanEval, GSM8K, CommonsenseQA, MATH, OpenbookQA, and ARC-Challenge.

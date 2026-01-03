@@ -83,12 +83,14 @@ def _parse_api_keys(api_keys_env: Optional[str] = None) -> Union[Dict[str, List[
                 if isinstance(keys, str):
                     # Handle comma-separated string or single key
                     if ',' in keys:
-                        result_dict[service] = [k.strip() for k in keys.split(',') if k.strip()]
+                        # Allow empty strings for local providers
+                        result_dict[service] = [k.strip() for k in keys.split(',')]
                     else:
-                        result_dict[service] = [keys.strip()] if keys.strip() else []
+                        # Allow empty strings for local providers
+                        result_dict[service] = [keys.strip()]
                 elif isinstance(keys, list):
-                    # Handle list format
-                    result_dict[service] = [str(k).strip() for k in keys if str(k).strip()]
+                    # Handle list format - allow empty strings
+                    result_dict[service] = [str(k).strip() for k in keys]
                 else:
                     # Skip invalid entries
                     continue
@@ -179,6 +181,32 @@ def _get_api_key(
         if not service_keys:
             raise ValueError(f"No API keys available for service '{matching_service}' in API_KEYS dict")
         
+        # Check if this is a local endpoint (localhost/127.0.0.1) with empty string key
+        # Allow empty string for local providers
+        is_local_endpoint = (
+            "localhost" in api_endpoint.lower() or 
+            "127.0.0.1" in api_endpoint or
+            api_endpoint.startswith("http://127.0.0.1") or
+            api_endpoint.startswith("http://localhost")
+        )
+        
+        # If all keys are empty strings and it's a local endpoint, allow it
+        if is_local_endpoint and all(key == "" for key in service_keys):
+            return ""
+        
+        # For non-local endpoints or mixed keys, validate that we have non-empty keys
+        if not any(key for key in service_keys):
+            raise ValueError(
+                f"No valid API keys available for service '{matching_service}' in API_KEYS dict. "
+                f"Empty strings are only allowed for localhost endpoints."
+            )
+        
+        # Filter out empty strings for non-local endpoints
+        if not is_local_endpoint:
+            service_keys = [key for key in service_keys if key]
+            if not service_keys:
+                raise ValueError(f"No valid API keys available for service '{matching_service}' in API_KEYS dict")
+        
         # Use service-specific cache key for round-robin
         cache_key = (matching_service, api_endpoint, api_name)
         keys_to_use = service_keys
@@ -187,6 +215,25 @@ def _get_api_key(
     else:
         if not api_keys:
             raise ValueError("No API keys provided")
+        
+        # Check if this is a local endpoint with empty string key
+        is_local_endpoint = (
+            "localhost" in api_endpoint.lower() or 
+            "127.0.0.1" in api_endpoint or
+            api_endpoint.startswith("http://127.0.0.1") or
+            api_endpoint.startswith("http://localhost")
+        )
+        
+        # If all keys are empty strings and it's a local endpoint, allow it
+        if is_local_endpoint and all(key == "" for key in api_keys):
+            return ""
+        
+        # For non-local endpoints, filter out empty strings
+        if not is_local_endpoint:
+            api_keys = [key for key in api_keys if key]
+            if not api_keys:
+                raise ValueError("No valid API keys provided. Empty strings are only allowed for localhost endpoints.")
+        
         cache_key = (api_endpoint, api_name)
         keys_to_use = api_keys
     
@@ -312,10 +359,25 @@ def call_api(
                 messages.append({"role": "system", "content": req['system_prompt']})
             messages.append({"role": "user", "content": req['query']})
 
+            # LiteLLM requires a non-empty API key even for local endpoints
+            # Use a dummy value if empty string was provided for localhost
+            api_key_for_litellm = selected_api_key
+            if not api_key_for_litellm:
+                # Check if this is a local endpoint
+                is_local = (
+                    "localhost" in req['api_endpoint'].lower() or 
+                    "127.0.0.1" in req['api_endpoint'] or
+                    req['api_endpoint'].startswith("http://127.0.0.1") or
+                    req['api_endpoint'].startswith("http://localhost")
+                )
+                if is_local:
+                    # Use a dummy value for local endpoints (LiteLLM requirement)
+                    api_key_for_litellm = "local"
+
             response = completion(
                 model=model_for_litellm,
                 messages=messages,
-                api_key=selected_api_key,
+                api_key=api_key_for_litellm,
                 api_base=req['api_endpoint'],
                 max_tokens=max_tokens,
                 temperature=temperature,
