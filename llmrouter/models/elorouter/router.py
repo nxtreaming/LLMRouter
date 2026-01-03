@@ -148,6 +148,7 @@ class EloRouter(MetaRouter):
             # Get API endpoint and model name from llm_data if available
             api_model_name = model_name
             api_endpoint = None
+            service = None
             if hasattr(self, 'llm_data') and self.llm_data and model_name in self.llm_data:
                 api_model_name = self.llm_data[model_name].get("model", model_name)
                 # Get API endpoint from llm_data, fallback to router config
@@ -155,6 +156,8 @@ class EloRouter(MetaRouter):
                     "api_endpoint",
                     self.cfg.get("api_endpoint")
                 )
+                # Get service field for service-specific API key selection
+                service = self.llm_data[model_name].get("service")
             
             # If still no endpoint found, try router config
             if api_endpoint is None:
@@ -173,6 +176,9 @@ class EloRouter(MetaRouter):
                 "model_name": model_name,
                 "api_name": api_model_name
             }
+            # Add service field if available (for service-specific API key selection)
+            if service:
+                request["service"] = service
 
             try:
                 result = call_api(request, max_tokens=1024, temperature=0.7)

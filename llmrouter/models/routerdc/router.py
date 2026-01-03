@@ -332,11 +332,14 @@ class DCRouter(MetaRouter):
                 # Get API endpoint and model name from llm_data if available
                 api_model_name = predicted_llm
                 api_endpoint = None
+                service = None
                 
                 # Priority 1: Get from llm_data (model-specific endpoint)
                 if hasattr(self, 'llm_data') and self.llm_data and predicted_llm in self.llm_data:
                     api_model_name = self.llm_data[predicted_llm].get("model", predicted_llm)
                     api_endpoint = self.llm_data[predicted_llm].get("api_endpoint")
+                    # Get service field for service-specific API key selection
+                    service = self.llm_data[predicted_llm].get("service")
                 
                 # Priority 2: Get from router config
                 if not api_endpoint:
@@ -364,6 +367,9 @@ class DCRouter(MetaRouter):
                     "model_name": predicted_llm,
                     "api_name": api_model_name
                 }
+                # Add service field if available (for service-specific API key selection)
+                if service:
+                    request["service"] = service
 
                 try:
                     result = call_api(request, max_tokens=1024, temperature=0.7)
@@ -466,6 +472,7 @@ class DCRouter(MetaRouter):
                             # Get API endpoint and model name from llm_data if available
                             api_model_name = predicted_llm
                             api_endpoint = None
+                            service = None
                             if hasattr(self, 'llm_data') and self.llm_data and predicted_llm in self.llm_data:
                                 api_model_name = self.llm_data[predicted_llm].get("model", predicted_llm)
                                 # Get API endpoint from llm_data, fallback to router config
@@ -473,6 +480,8 @@ class DCRouter(MetaRouter):
                                     "api_endpoint",
                                     self.cfg.get("api_endpoint")
                                 )
+                                # Get service field for service-specific API key selection
+                                service = self.llm_data[predicted_llm].get("service")
                             
                             # If still no endpoint found, try router config
                             if api_endpoint is None:
@@ -491,6 +500,9 @@ class DCRouter(MetaRouter):
                                 "model_name": predicted_llm,
                                 "api_name": api_model_name
                             }
+                            # Add service field if available (for service-specific API key selection)
+                            if service:
+                                request["service"] = service
 
                             try:
                                 result = call_api(request, max_tokens=1024, temperature=0.7)
