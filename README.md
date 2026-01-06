@@ -585,9 +585,7 @@ score = calculate_task_performance(
 For detailed guides on creating custom tasks:
 - 📖 **Complete Guide**: [custom_tasks/README.md](custom_tasks/README.md)
 
-<!-- ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ulab-uiuc/LLMRouter&type=date&legend=top-left)](https://www.star-history.com/#ulab-uiuc/LLMRouter&type=date&legend=top-left) -->
 
 
 ## 🗺️ TODO
@@ -633,6 +631,12 @@ Contributing to LLMRouter is more than adding code. It is an opportunity to **in
     <img src="https://contrib.rocks/image?repo=ulab-uiuc/LLMRouter" style="border-radius: 15px; box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);" />
   </a>
 </div>
+
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ulab-uiuc/LLMRouter&type=date&legend=top-left)](https://www.star-history.com/#ulab-uiuc/LLMRouter&type=date&legend=top-left)
 
 
 
