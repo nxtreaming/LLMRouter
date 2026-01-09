@@ -2,8 +2,14 @@
 """
 Data Generation Script - Step 2a: Generate Query Data JSONL Files
 
-This script generates query data JSONL files (train/test) from 11 diverse benchmark datasets.
+This script generates query data JSONL files (train/test) from 14 diverse benchmark datasets.
 The output format matches StandardQueryData format without embeddings.
+
+Supported Datasets:
+- Text: Natural QA, Trivia QA, MMLU, GPQA, CommonsenseQA, OpenbookQA, ARC-Challenge
+- Math: GSM8K, MATH
+- Code: MBPP, HumanEval
+- Multimodal: Geometry3K, MathVista, Charades-Ego (Activity/Object/Verb)
 
 Input: Config YAML file (optional, can use command-line args)
 Output: query_data_train.jsonl and query_data_test.jsonl files
@@ -39,12 +45,13 @@ from llmrouter.utils import (
     setup_environment, TASK_DESCRIPTIONS, CASE_NUM
 )
 from llmrouter.data.data_loader import DataLoader
+from llmrouter.data import batch_vlm_describe_images
 
 # Setup environment
 setup_environment()
 
 
-def get_n_samples(N=10, random_seed=42, cache_dir=None):
+def get_n_samples(N=10, random_seed=42, cache_dir=None, charades_ego_path=None):
     """Extract samples from all datasets
 
     Args:
@@ -66,6 +73,11 @@ def get_n_samples(N=10, random_seed=42, cache_dir=None):
     math_samples = []
     openbook_qa_samples = []
     arc_challenge_samples = []
+    geometry3k_samples = []
+    mathvista_samples = []
+    charades_ego_activity_samples = []
+    charades_ego_object_samples = []
+    charades_ego_verb_samples = []
 
     # 1. Natural QA dataset
     try:
@@ -235,21 +247,102 @@ def get_n_samples(N=10, random_seed=42, cache_dir=None):
     except Exception as e:
         print(f"Error extracting from MATH: {e}")
 
+    # 12. Geometry3K (multimodal geometry QA)
+    try:
+        geometry3k = load_dataset("hiyouga/geometry3k", cache_dir=cache_dir)
+        split_name = 'train' if 'train' in geometry3k else list(geometry3k.keys())[0]
+        dataset_size = len(geometry3k[split_name])
+        if dataset_size >= N:
+            indices = random.sample(range(dataset_size), N)
+            geometry3k_samples = [geometry3k[split_name][i] for i in indices]
+        else:
+            geometry3k_samples = [geometry3k[split_name][i] for i in range(dataset_size)]
+        print(f"Successfully extracted {len(geometry3k_samples)} samples from Geometry3K")
+    except Exception as e:
+        print(f"Error extracting from Geometry3K: {e}")
+
+    # 13. MathVista (multimodal visual math QA)
+    try:
+        mathvista = load_dataset("AI4Math/MathVista", cache_dir=cache_dir)
+        split_name = 'train' if 'train' in mathvista else list(mathvista.keys())[0]
+        dataset_size = len(mathvista[split_name])
+        if dataset_size >= N:
+            indices = random.sample(range(dataset_size), N)
+            mathvista_samples = [mathvista[split_name][i] for i in indices]
+        else:
+            mathvista_samples = [mathvista[split_name][i] for i in range(dataset_size)]
+        print(f"Successfully extracted {len(mathvista_samples)} samples from MathVista")
+    except Exception as e:
+        print(f"Error extracting from MathVista: {e}")
+
+    # 14. Charades-Ego Activity (multimodal video activity recognition)
+    try:
+        # Need to provide data_root from argument
+        if charades_ego_path and os.path.exists(charades_ego_path):
+            sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
+            from charades_ego_to_json import load_charades_ego_samples
+            charades_ego_activity_samples = load_charades_ego_samples(
+                N=N, task_type="activity", data_root=charades_ego_path, 
+                random_seed=random_seed, cache_dir=cache_dir
+            )
+            print(f"Successfully extracted {len(charades_ego_activity_samples)} samples from Charades-Ego Activity")
+        else:
+            print("Skipping Charades-Ego Activity: charades_ego_path not set or invalid")
+    except Exception as e:
+        print(f"Error extracting from Charades-Ego Activity: {e}")
+    
+    # 15. Charades-Ego Object (multimodal video object recognition)
+    charades_ego_object_samples = []
+    try:
+        if charades_ego_path and os.path.exists(charades_ego_path):
+            sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
+            from charades_ego_to_json import load_charades_ego_samples
+            charades_ego_object_samples = load_charades_ego_samples(
+                N=N, task_type="object", data_root=charades_ego_path,
+                random_seed=random_seed, cache_dir=cache_dir
+            )
+            print(f"Successfully extracted {len(charades_ego_object_samples)} samples from Charades-Ego Object")
+        else:
+            print("Skipping Charades-Ego Object: charades_ego_path not set or invalid")
+    except Exception as e:
+        print(f"Error extracting from Charades-Ego Object: {e}")
+    
+    # 16. Charades-Ego Verb (multimodal video verb recognition)
+    charades_ego_verb_samples = []
+    try:
+        if charades_ego_path and os.path.exists(charades_ego_path):
+            sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
+            from charades_ego_to_json import load_charades_ego_samples
+            charades_ego_verb_samples = load_charades_ego_samples(
+                N=N, task_type="verb", data_root=charades_ego_path,
+                random_seed=random_seed, cache_dir=cache_dir
+            )
+            print(f"Successfully extracted {len(charades_ego_verb_samples)} samples from Charades-Ego Verb")
+        else:
+            print("Skipping Charades-Ego Verb: charades_ego_path not set or invalid")
+    except Exception as e:
+        print(f"Error extracting from Charades-Ego Verb: {e}")
+
     return {
-        "natural_qa": natural_qa_samples,
-        "trivia_qa": trivia_qa_samples,
-        "mmlu": mmlu_samples,
-        'gpqa': gpqa_samples,
-        'mbpp': mbpp_samples,
-        'human_eval': humaneval_samples,
-        'gsm8k': gsm8k_samples,
-        'commonsense_qa': commonsense_qa_samples,
-        'math': math_samples,
-        'openbook_qa': openbook_qa_samples,
-        'arc_challenge': arc_challenge_samples,
+        # "natural_qa": natural_qa_samples,
+        # "trivia_qa": trivia_qa_samples,
+        # "mmlu": mmlu_samples,
+        # 'gpqa': gpqa_samples,
+        # 'mbpp': mbpp_samples,
+        # 'human_eval': humaneval_samples,
+        # 'gsm8k': gsm8k_samples,
+        # 'commonsense_qa': commonsense_qa_samples,
+        # 'math': math_samples,
+        # 'openbook_qa': openbook_qa_samples,
+        # 'arc_challenge': arc_challenge_samples,
+        'geometry3k': geometry3k_samples,
+        'mathvista': mathvista_samples,
+        'charades_ego_activity': charades_ego_activity_samples,
+        'charades_ego_object': charades_ego_object_samples,
+        'charades_ego_verb': charades_ego_verb_samples,
     }
 
-def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42):
+def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42, charades_ego_path=None):
     """
     Generate query data from benchmark datasets.
     
@@ -267,7 +360,7 @@ def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42):
     n_samples = sample_size if sample_size else CASE_NUM
     
     print(f"Extracting {n_samples} samples per task...")
-    samples = get_n_samples(N=n_samples)
+    samples = get_n_samples(N=n_samples, charades_ego_path=charades_ego_path)
     
     data_all = []
     
@@ -414,6 +507,63 @@ def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42):
                     'task_id': None
                 }
                 data_all.append(case)
+                
+        elif task_name == "geometry3k":
+            vlm_prompt = (
+                "Describe the geometry diagram for solving the problem.\n"
+                "Include all visible text, numbers, symbols, angles, lengths, and geometric relationships.\n"
+                "Be concise and factual. Do NOT solve the problem."
+            )
+            images_list = [sample["images"] for sample in task_samples]
+            image_descriptions = batch_vlm_describe_images(vlm_prompt, images_list)
+            
+            for sample, image_desc in zip(task_samples, image_descriptions):
+                # Remove <image> tags from problem text
+                problem_text = sample['problem'].replace('<image>', '').strip()
+                query = f"{problem_text}\n\n[Diagram description]\n{image_desc}"
+                
+                case = {
+                    'task_name': task_name,
+                    'query': query,
+                    'ground_truth': sample["answer"],
+                    'metric': 'MATH',
+                    'choices': None,
+                    'task_id': None
+                }
+                data_all.append(case)
+                
+        elif task_name == "mathvista":
+            vlm_prompt = (
+                "Describe the image for solving the question.\n"
+                "Include all visible text, numbers, symbols, tables/charts/axes, and geometry relationships.\n"
+                "Be concise and factual. Do NOT solve the problem."
+            )
+            # Batch process all images in parallel
+            images_list = [[sample["decoded_image"]] for sample in task_samples]
+            image_descriptions = batch_vlm_describe_images(vlm_prompt, images_list)
+            
+            # Build cases with descriptions
+            for sample, image_desc in zip(task_samples, image_descriptions):
+                question_text = sample['question']
+                query = f"{question_text}\n\n[Image description]\n{image_desc}"
+                
+                case = {
+                    'task_name': task_name,
+                    'query': query,
+                    'ground_truth': sample["answer"],
+                    'metric': 'MATH',
+                    'question_type': sample["question_type"],
+                    'choices': sample["choices"],
+                    'task_id': sample["pid"]
+                }
+                data_all.append(case)
+                
+        elif task_name in ["charades_ego_activity", "charades_ego_object", "charades_ego_verb"]:
+            sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
+            from charades_ego_to_json import process_charades_ego_jsonl_samples
+            
+            charades_cases = process_charades_ego_jsonl_samples(task_name, task_samples, charades_ego_path)
+            data_all.extend(charades_cases)
     
     print(f"Generated {len(data_all)} base samples")
     
@@ -456,6 +606,10 @@ def save_query_data_jsonl(data_list, output_path):
                 'choices': json.dumps(item['choices']) if item['choices'] is not None else None,
                 'task_id': item['task_id']
             }
+            if 'question_type' in item:
+                qt = item['question_type']
+                if qt is not None and not (isinstance(qt, float) and np.isnan(qt)):
+                    record['question_type'] = qt
             f.write(json.dumps(record, ensure_ascii=False) + '\n')
     
     print(f"✅ Saved {len(data_list)} records to {output_path}")
@@ -472,6 +626,8 @@ def main():
                        help="Output path for train JSONL file")
     parser.add_argument("--output_test", type=str, default=None,
                        help="Output path for test JSONL file")
+    parser.add_argument("--charades_ego_path", type=str, default=None,
+                       help="Path to Charades-Ego dataset root")
     parser.add_argument("--test", action="store_true", 
                        help="Run with 10 samples for quick testing")
     
@@ -512,7 +668,8 @@ def main():
         train_data, test_data = generate_query_data(
             sample_size=args.sample,
             train_ratio=config.get("data_generation", {}).get("train_ratio", 0.8),
-            random_seed=config.get("data_generation", {}).get("random_seed", 42)
+            random_seed=config.get("data_generation", {}).get("random_seed", 42),
+            charades_ego_path=args.charades_ego_path
         )
         
         # Save to JSONL files
@@ -534,8 +691,6 @@ def main():
         print(f"  - Train: {output_train}")
         print(f"  - Test: {output_test}")
         
-    except KeyboardInterrupt:
-        print("\n⚠️  Data generation interrupted by user")
     except Exception as e:
         print(f"\n❌ Error during data generation: {str(e)}")
         import traceback

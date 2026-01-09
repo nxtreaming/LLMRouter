@@ -35,7 +35,6 @@ import pandas as pd
 import numpy as np
 import torch
 from tqdm import tqdm
-from litellm import Router
 
 # Allow importing local helper packages under repo `data/` (e.g., `human_eval`, `mbpp`)
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -49,7 +48,7 @@ from llmrouter.utils import (
     format_mc_prompt, format_gsm8k_prompt, format_math_prompt,
     format_commonsense_qa_prompt, format_mbpp_prompt, format_humaneval_prompt,
     generate_task_query, ProgressTracker, to_tensor, clean_df,
-    process_final_data
+    process_final_data, call_api
 )
 from llmrouter.utils.data_processing import process_unified_embeddings_and_routing
 from llmrouter.data.data_loader import DataLoader
@@ -105,7 +104,6 @@ class LiteLLMRouterManager:
             llm_data_path: Path to llm_descriptions.json file (legacy)
             llm_data_dict: Dictionary with LLM data (preferred, from config)
         """
-        self.routers = {}
         if llm_data_dict:
             self.config = llm_data_dict
         elif llm_data_path:
@@ -121,7 +119,6 @@ class LiteLLMRouterManager:
                 raise ValueError("No LLM data provided. Use llm_data_path or llm_data_dict")
         
         self._load_model_config()
-        self._create_routers()
     
     def _load_model_config(self):
         """Load model configuration"""
@@ -132,47 +129,6 @@ class LiteLLMRouterManager:
         print(f"Total models in config: {len(all_models)}")
         print(f"Using {len(self.allowed_models)} non-think models: {self.allowed_models}")
     
-    def _create_routers(self):
-        """Create Router instances for each model"""
-        if not API_KEYS:
-            raise ValueError(
-                "API_KEYS is not set. Set env var `API_KEYS` to a single key or a JSON list of keys."
-            )
-
-        for model_name in self.allowed_models:
-            api_model_name = self.config[model_name]["model"]
-            # Get API endpoint from llm_data
-            api_endpoint = self.config[model_name].get("api_endpoint")
-            
-            # Validate that we have an endpoint
-            if not api_endpoint:
-                raise ValueError(
-                    f"API endpoint not found for model '{model_name}' in llm_data. "
-                    f"Please specify 'api_endpoint' field for this model in the llm_data JSON file."
-                )
-            
-            # Create model list with all API keys for load balancing
-            model_list = []
-            for i, api_key in enumerate(API_KEYS):
-                model_list.append({
-                    "model_name": model_name,
-                    "litellm_params": {
-                        "model": api_model_name,
-                        "api_key": api_key,
-                        "api_base": api_endpoint,
-                        "timeout": self._get_timeout_for_model(model_name),
-                        "max_retries": 3
-                    }
-                })
-            
-            # Create router for this model
-            self.routers[model_name] = Router(
-                model_list=model_list,
-                routing_strategy="round_robin"  # Distribute load evenly
-            )
-            
-            print(f"Created router for {model_name} with {len(API_KEYS)} API keys")
-    
     def _get_timeout_for_model(self, model_name):
         """Get timeout setting for specific model"""
         timeout_settings = {
@@ -181,78 +137,51 @@ class LiteLLMRouterManager:
             'llama3-chatqa-1.5-70b': 90,
         }
         return timeout_settings.get(model_name, 30)
-    
-    def get_router(self, model_name):
-        """Get router for specific model"""
-        return self.routers.get(model_name)
-
 
 # ============================================================================
 # API CALLING WITH LITELLM ROUTER
 # ============================================================================
 
 def process_single_query_model(args):
-    """Process a single query with a single model using LiteLLM Router"""
+    """Process a single query with a single model using call_api"""
     base_row, model_name, router_manager, tracker = args
     
     try:
         # Generate task-specific prompt
         formatted_query = generate_task_query(base_row['task_name'], base_row.to_dict())
         
-        # Get router for this model
-        router = router_manager.get_router(model_name)
-        if not router:
-            raise ValueError(f"No router found for model: {model_name}")
+        model_config = router_manager.config[model_name]
         
-        # Call the API using LiteLLM Router
+        # Call the API
         start_time = time.time()
+        request = {
+            "api_endpoint": model_config["api_endpoint"],
+            "query": formatted_query['user'],
+            "model_name": model_name,
+            "api_name": model_config["model"],
+            "service": model_config["service"],
+        }
         
-        try:
-            response = router.completion(
-                model=model_name,
-                messages=[{"role": "user", "content": formatted_query}],
-                max_tokens=512,
-                temperature=0.01,
-                top_p=0.9
-            )
-            
-            response_text = response.choices[0].message.content
-            usage = response.usage.__dict__ if hasattr(response, 'usage') and response.usage else None
-                    
-        except Exception as api_error:
-            error_msg = str(api_error)
-            if "timeout" in error_msg.lower():
-                response_text = f"API Error: Request timed out for model {model_name}"
-            else:
-                response_text = f"API Error: {error_msg[:100]}"
-            usage = None
-            
-        end_time = time.time()
+        if formatted_query.get('system'):
+            request["system_prompt"] = formatted_query['system']
         
-        # Extract token count
-        if usage:
-            token_num = usage.get("total_tokens", 0)
-            prompt_tokens = usage.get("prompt_tokens", 0)
-            completion_tokens = usage.get("completion_tokens", 0)
-        else:
-            prompt_tokens = len(formatted_query.split()) if formatted_query else 0
-            completion_tokens = len(response_text.split()) if isinstance(response_text, str) else 0
-            token_num = prompt_tokens + completion_tokens
+        timeout = router_manager._get_timeout_for_model(model_name)
+        result = call_api(request, max_tokens=512, temperature=0.01, top_p=0.9, timeout=timeout)
         
-        # Create result row
         result_row = base_row.copy()
         result_row['model_name'] = model_name
         result_row['formatted_query'] = formatted_query
-        result_row['response'] = response_text
-        result_row['token_num'] = token_num
-        result_row['input_tokens'] = prompt_tokens
-        result_row['output_tokens'] = completion_tokens
-        result_row['response_time'] = end_time - start_time
-        # API key tracking (set empty string if not available)
+        result_row['response'] = result['response']
+        result_row['token_num'] = result['token_num']
+        result_row['input_tokens'] = result['prompt_tokens']
+        result_row['output_tokens'] = result['completion_tokens']
+        result_row['response_time'] = result['response_time']
+        result_row['response_time'] = time.time() - start_time
         result_row['api_key_used'] = ""
         
-        tracker.update(success=True, model_name=model_name)
-        return result_row, True
+        success = 'error' not in result
+        tracker.update(success=success, model_name=model_name)
+        return result_row, success
         
     except Exception as e:
         print(f"Error processing {base_row.get('task_name', 'unknown')} with {model_name}: {str(e)}")
@@ -482,7 +411,7 @@ def evaluate_responses(df):
     print(f"Evaluating {len(df)} responses...")
     
     # Check required columns
-    required_columns = ['response', 'gt', 'metric', 'task_name']
+    required_columns = ['response', 'ground_truth', 'metric', 'task_name']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
@@ -500,6 +429,7 @@ def evaluate_responses(df):
     COMMONSENSE_TASK = ['commonsense_qa', 'openbook_qa', 'arc_challenge']
     WORLD_KNOWLEDGE_TASK = ["natural_qa", "trivia_qa"]
     POPULAR_TASK = ["mmlu", "gpqa"]
+    MULTIMODAL_TASK = ["geometry3k", "mathvista", "charades_ego_activity", "charades_ego_verb", "charades_ego_object"]
     
     # Initialize results storage
     performance_scores = []
@@ -510,7 +440,8 @@ def evaluate_responses(df):
         'code': [],
         'commonsense': [],
         'world_knowledge': [],
-        'popular': []
+        'popular': [],
+        'multimodal': []
     }
     
     # Process each row
@@ -564,6 +495,8 @@ def evaluate_responses(df):
                 category_results['world_knowledge'].append(performance)
             elif task_name in POPULAR_TASK:
                 category_results['popular'].append(performance)
+            elif task_name in MULTIMODAL_TASK:
+                category_results['multimodal'].append(performance)
                 
         except Exception as e:
             print(f"\nError evaluating row {idx} (task: {row.get('task_name', 'unknown')}, model: {row.get('model_name', 'unknown')}): {e}")
@@ -630,6 +563,10 @@ def query_data_to_dataframe(query_data: List[Dict]) -> pd.DataFrame:
             'choices': item.get('choices'),
             'task_id': item.get('task_id')
         }
+        if 'question_type' in item:
+            qt = item['question_type']
+            if qt is not None and not (isinstance(qt, float) and np.isnan(qt)):
+                row['question_type'] = qt
         rows.append(row)
     return pd.DataFrame(rows)
 
