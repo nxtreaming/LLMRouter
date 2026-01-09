@@ -365,26 +365,23 @@ def load_charades_ego_samples(N=10, task_type="activity", data_root=None, random
         if selected_ego_seg is None:
             continue
         
-        selected_cls_id = selected_ego_seg["cls_id"]
+        selected_cls_id = selected_ego_seg["cls_id"][0]
         activity_id = str(selected_cls_id).lower()
         activity_label = selected_ego_seg["label"]
         
         # Determine ground truth based on task type
         if task_type == "activity":
             ground_truth = activity_id
-            ground_truth_label = activity_label
         elif task_type == "verb":
             if activity_id not in action_to_verb:
                 continue
             verb_id = action_to_verb[activity_id]
             ground_truth = verb_id
-            ground_truth_label = verb_id_to_label.get(verb_id, verb_id)
         elif task_type == "object":
             if activity_id not in action_to_object:
                 continue
             obj_id = action_to_object[activity_id]
             ground_truth = obj_id
-            ground_truth_label = obj_id_to_label.get(obj_id, obj_id)
         
         # Randomly simulate missing modality
         selected_mode = random.choice(["ego", "exo", "both"])
@@ -394,7 +391,6 @@ def load_charades_ego_samples(N=10, task_type="activity", data_root=None, random
             "video_id_exo": exo_video_id,
             "base_id": base_id,
             "ground_truth": ground_truth,
-            "ground_truth_label": ground_truth_label,
             "ego_start": float(selected_ego_seg["start"]),
             "ego_end": float(selected_ego_seg["end"]),
             "exo_start": float(selected_exo_seg["start"]),
@@ -554,7 +550,6 @@ def convert_charades_ego(data_root, vlm_name, sample_size, task_type, top_k, num
         
         # Retrieve extra metadata from original sample if needed
         original_sample = samples[idx]
-        ground_truth_label = original_sample.get('ground_truth_label', str(ground_truth))
         base_id = original_sample.get('base_id') # Should be in task_id roughly
         
         # Run Real Inference for each candidate model
@@ -590,8 +585,7 @@ def convert_charades_ego(data_root, vlm_name, sample_size, task_type, top_k, num
                 "gt": ground_truth,
                 "metric": metric,
                 "choices": choices,
-                "task_id": f"{task_id}|pass@{top_k}", # task_id already has base info
-                "gt_label": ground_truth_label,
+                "task_id": f"{task_id}",
                 "model_name": model_key,
                 "response": final_pred,
                 "performance": performance, 

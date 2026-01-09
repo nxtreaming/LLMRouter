@@ -127,9 +127,10 @@ def process_unified_embeddings_and_routing(
         key = (
             query_item['task_name'],
             query_item['query'],
-            query_item['ground_truth'],
+            tuple(query_item['ground_truth']) if isinstance(query_item['ground_truth'], list) else query_item['ground_truth'],
             query_item['metric']
         )
+
         if key not in query_to_data:
             query_to_data[key] = query_item
             all_queries.append(query_item)
@@ -155,7 +156,7 @@ def process_unified_embeddings_and_routing(
         key = (
             query_item['task_name'],
             query_item['query'],
-            query_item['ground_truth'],
+            tuple(query_item['ground_truth']) if isinstance(query_item['ground_truth'], list) else query_item['ground_truth'],
             query_item['metric']
         )
         embedding_id_map[key] = embedding_id
@@ -188,7 +189,7 @@ def process_unified_embeddings_and_routing(
             key = (
                 row['task_name'],
                 row['query'],
-                gt_value,
+                tuple(gt_value) if isinstance(gt_value, list) else gt_value,
                 row['metric']
             )
             embedding_id = embedding_id_map.get(key, None)
