@@ -587,9 +587,9 @@ score = calculate_task_performance(
 For detailed guides on creating custom tasks:
 - 📖 **Complete Guide**: [custom_tasks/README.md](custom_tasks/README.md)
 
-### Custom Tasks - Multi-View Videos
+### 🎥 Hands-on: Multi-View Video Tasks
 
-> 💡 **Deep Dive**: For advanced multi-view video tasks (like Charades-Ego), refer to our [Charades-Ego Integration Guide](data/charades_ego/README.md).
+Follow our **step-by-step walkthrough** in the [Charades-Ego Integration Guide](data/charades_ego/README.md) to process paired egocentric videos, generate VLM-based features, and train routers for **Activity**, **Object**, and **Verb** recognition.
 
 
 
