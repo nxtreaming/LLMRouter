@@ -1,10 +1,16 @@
 # Charades-Ego Dataset Preparation
 
-This directory contains scripts to convert the Charades-Ego dataset into the LLMRouter training format.
+<div align="center">
+  <img src="assets/charades-ego-demo.jpg" alt="Charades-Ego Example" width="800">
+</div>
+
+**Charades-Ego** is a unique large-scale dataset featuring **paired first-person (egocentric) and third-person videos**, enabling rich multimodal understanding and diverse action recognition tasks.
+
+This directory provides the complete pipeline to convert Charades-Ego into the **LLMRouter** training format, effectively bridging complex video understanding with intelligent model routing.
 
 ## 1. Data Download
 
-You can find download links and dataset details on the [Charades-Ego website](https://prior.allenai.org/projects/charades_ego).
+You can find download links and dataset details on the [Charades-Ego website](https://prior.allenai.org/projects/charades-ego).
 
 **Archives:**
 - **Annotations:** `https://ai2-public-datasets.s3-us-west-2.amazonaws.com/charades/CharadesEgo.zip`

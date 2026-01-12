@@ -244,6 +244,8 @@ export API_KEYS='{"Ollama": ""}'
 
 LLMRouter includes a complete data generation pipeline that transforms raw benchmark datasets into formatted routing data with embeddings. The pipeline supports 11 diverse benchmark datasets including Natural QA, Trivia QA, MMLU, GPQA, MBPP, HumanEval, GSM8K, CommonsenseQA, MATH, OpenbookQA, and ARC-Challenge.
 
+> 💡 **Multimodal Integration**: Learn how to incorporate complex multimodal tasks (Video/Image + Text) into LLMRouter by checking our [Multimodal Task Guide](data/multimodal_tasks/README.md). We currently support 5 multimodal tasks across 3 datasets (Geometry3K, MathVista, Charades-Ego).
+
 #### Pipeline Overview
 
 The data generation pipeline consists of three main steps:
@@ -584,6 +586,10 @@ score = calculate_task_performance(
 
 For detailed guides on creating custom tasks:
 - 📖 **Complete Guide**: [custom_tasks/README.md](custom_tasks/README.md)
+
+### Custom Tasks - Multi-View Videos
+
+> 💡 **Deep Dive**: For advanced multi-view video tasks (like Charades-Ego), refer to our [Charades-Ego Integration Guide](data/charades_ego/README.md).
 
 
 
