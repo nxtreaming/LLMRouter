@@ -123,6 +123,8 @@ pip install llmrouter-lib
 
 LLMRouter requires API keys to make LLM API calls for inference, chat, and data generation. Set the `API_KEYS` environment variable using one of the following formats:
 
+> 💡 **Free NVIDIA API Keys**: The NVIDIA endpoints currently used in LLMRouter have freely available API keys. To get started, visit [https://build.nvidia.com/](https://build.nvidia.com/) to create an account, then you can generate your API keys at no cost.
+
 #### **Service-Specific Dict Format** (recommended for multiple providers)
 
 Use this format when you have models from different service providers (e.g., NVIDIA, OpenAI, Anthropic) and want to use different API keys for each provider:
@@ -239,6 +241,63 @@ export API_KEYS='{"Ollama": ""}'
 ```
 
 **Important**: Use the `/v1` endpoint (OpenAI-compatible), not the native API endpoints. Empty strings are automatically detected for localhost endpoints (`localhost` or `127.0.0.1`).
+
+### 🧪 Testing Model Availability
+
+You can test the availability of different candidate models using the following curl commands. This is useful for verifying that your API keys work correctly and that specific models are accessible:
+
+**Note**: If you're using the dict format for `API_KEYS`, extract the NVIDIA key first (e.g., using `echo $API_KEYS | python3 -c "import sys, json; print(json.load(sys.stdin)['NVIDIA'].split(',')[0])"`), or set a temporary variable with your NVIDIA API key.
+
+```bash
+# export API_KEYS=...
+
+# Example API endpoint - adjust based on your configuration
+# This example uses NVIDIA's endpoint, but you should use the endpoint
+# specified in your LLM candidate JSON or router config
+API_ENDPOINT="https://integrate.api.nvidia.com/v1/chat/completions"
+
+# Example model list - adjust based on your LLM candidate configuration
+# These are example models; replace with the actual model names/IDs
+# from your LLM candidate JSON file
+MODELS=(
+  "qwen/qwen2.5-7b-instruct"
+  "meta/llama-3.1-8b-instruct"
+  "mistralai/mistral-7b-instruct-v0.3"
+  "nvidia/llama-3.3-nemotron-super-49b-v1"
+  "mistralai/mixtral-8x7b-instruct-v0.1"
+  "mistralai/mixtral-8x22b-instruct-v0.1"
+)
+
+SYSTEM_PROMPT="Hello."
+PROMPT="Hello."
+
+for MODEL in "${MODELS[@]}"; do
+  echo "===== $MODEL ====="
+
+  curl "$API_ENDPOINT" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $API_KEYS" \
+    -d "{
+      \"model\": \"$MODEL\",
+      \"messages\": [
+        {
+          \"role\": \"system\",
+          \"content\": \"$SYSTEM_PROMPT\"
+        },
+        {
+          \"role\": \"user\",
+          \"content\": \"$PROMPT\"
+        }
+      ],
+      \"temperature\": 0.8,
+      \"max_tokens\": 200
+    }"
+
+  echo
+done
+```
+
+This script will test each model in the list and display the response, helping you verify which models are available and working with your API key.
 
 ### 📊 Preparing Training Data
 
