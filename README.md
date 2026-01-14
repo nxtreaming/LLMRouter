@@ -36,6 +36,11 @@
 
 ## 📰 News
 
+
+- ⭐ **[2026-01]**: **LLMRouter** just crossed 1K GitHub stars! We’ve also released llmrouter-lib v0.2.0. Updates include service-specific dict configs (OpenAI, Anthropic, etc.) and multimodal routing (Video/Image + Text) on Geometry3K, MathVista, and Charades-Ego—all in the first unified open-source LLM routing library with 16+ routers, a unified CLI, Gradio UI, and 11 datasets. Install via pip install llmrouter-lib. More updates soon! 🚀
+
+
+
 - 🚀 **[2025-12]**: **LLMRouter** is officially released - ship smarter 🧠, cost-aware 💸 LLM routing with 16+ routers 🧭, a unified `llmrouter` CLI 🛠️, and a plugin workflow for custom routers 🧩.
 
 ## 🔗 Links
