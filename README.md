@@ -318,12 +318,6 @@ The data generation pipeline consists of three main steps:
 2. **Generate LLM Embeddings** - Create embeddings for LLM candidates from their metadata
 3. **API Calling & Evaluation** - Call LLM APIs, evaluate responses, and generate unified embeddings + routing data
 
-#### 🎨 Visual Interface (ComfyUI)
-
-For a more intuitive, modular experience, you can use our **ComfyUI** integration to visually build and execute the data generation pipeline. This allows you to select datasets, configure LLMs, and monitor the process graphically.
-
-👉 **[Learn how to use the ComfyUI Interface](ComfyUI/README.md)**
-
 #### Quick Start
 
 Start with the sample configuration file:
@@ -338,6 +332,8 @@ python llmrouter/data/generate_llm_embeddings.py --config llmrouter/data/sample_
 # Step 3: API calling & evaluation (requires API_KEYS - see "Setting Up API Keys" section above)
 python llmrouter/data/api_calling_evaluation.py --config llmrouter/data/sample_config.yaml --workers 100
 ```
+
+> 🎨 **Visual Interface**: For a more intuitive experience, you can use our [ComfyUI integration](ComfyUI/README.md) to visually design, configure, and monitor your data generation pipeline through a modular graphical interface.
 
 #### Output Files
 
