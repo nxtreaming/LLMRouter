@@ -128,6 +128,30 @@ class KNNMultiRoundRouter(MetaRouter):
                 f"Failed to load KNN model. Please ensure the model is trained and saved at {knn_model_path}"
             )
 
+    def _route_sub_query(self, sub_query: str) -> str:
+        """
+        Route a single sub-query using KNN to select the best model.
+        
+        This method is useful for testing and verification purposes, allowing
+        you to test routing decisions without executing the full pipeline.
+        
+        Args:
+            sub_query: Sub-query string to route
+            
+        Returns:
+            str: Model name that the sub-query is routed to
+        """
+        # Load KNN model if not already loaded
+        self._load_knn_model_if_needed()
+        
+        # Get embedding for the sub-query
+        query_embedding = [get_longformer_embedding(sub_query).numpy()]
+        
+        # Use KNN to predict the best model
+        model_name = self.knn_model.predict(query_embedding)[0]
+        
+        return model_name
+
     def route_single(self, query):
         """
         Route a single query through the full pipeline: decompose → route → execute → aggregate.
@@ -183,8 +207,7 @@ class KNNMultiRoundRouter(MetaRouter):
         sub_responses = []
         for sub_query in sub_queries:
             # Route the sub-query using KNN
-            query_embedding = [get_longformer_embedding(sub_query).numpy()]
-            model_name = self.knn_model.predict(query_embedding)[0]
+            model_name = self._route_sub_query(sub_query)
             
             # Execute the sub-query with the routed model
             execution_result = self._execute_sub_query(sub_query, model_name)
