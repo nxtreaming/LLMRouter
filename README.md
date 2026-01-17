@@ -320,6 +320,8 @@ The data generation pipeline consists of three main steps:
 
 #### Quick Start
 
+> 🎨 **Visual Interface**: For a more intuitive experience, you can use our [ComfyUI integration](ComfyUI/README.md) to visually design, configure, and monitor your data generation pipeline through a modular graphical interface.
+
 Start with the sample configuration file:
 
 ```bash
@@ -332,8 +334,6 @@ python llmrouter/data/generate_llm_embeddings.py --config llmrouter/data/sample_
 # Step 3: API calling & evaluation (requires API_KEYS - see "Setting Up API Keys" section above)
 python llmrouter/data/api_calling_evaluation.py --config llmrouter/data/sample_config.yaml --workers 100
 ```
-
-> 🎨 **Visual Interface**: For a more intuitive experience, you can use our [ComfyUI integration](ComfyUI/README.md) to visually design, configure, and monitor your data generation pipeline through a modular graphical interface.
 
 #### Output Files
 
