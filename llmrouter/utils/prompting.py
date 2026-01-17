@@ -137,6 +137,65 @@ def format_humaneval_prompt(prompt):
     return {"system": system_prompt, "user": user_query}
 
 
+def format_charades_ego_prompt(query, choices, id_to_label, task_type, top_k):
+    """Format prompt for Charades-Ego video classification tasks
+
+    Returns:
+        dict: {"system": system_prompt, "user": user_query}
+    """
+    # Example ids for different task types
+    example_ids = {
+        "activity": "c104",
+        "verb": "v003",
+        "object": "o012"
+    }
+    
+    # Mapping titles
+    mapping_titles = {
+        "activity": "Activity id mapping (id: name):",
+        "verb": "Verb id mapping (id: name):",
+        "object": "Object id mapping (id: name):"
+    }
+    
+    mapping_lines = "\n".join([f"{cid}: {id_to_label.get(cid, '')}" for cid in choices])
+    system_prompt = f"""You are a strict classifier for Charades-Ego video action recognition.
+Task: output the top-{top_k} most likely ids from the mapping below (example: {example_ids[task_type]}).
+
+Output format:
+- Output ONLY ids separated by commas. No spaces. No extra words.
+- Output exactly {top_k} ids.
+- Put your final answer inside \\boxed{{}}.
+
+How to use the description:
+- Focus on the person's motion and the main target objects they act on.
+- Ignore static background items unless they are being used.
+- Prefer the MOST specific label supported by the evidence.
+- If the descriptions mention multiple possibilities, pick the single best-supported id.
+
+{mapping_titles[task_type]}
+{mapping_lines}"""
+    
+    return {"system": system_prompt, "user": query}
+
+
+def format_mathvista_prompt(query, choices, question_type):
+    """
+    Format prompt for MathVista tasks
+
+    Returns:
+        dict: {"system": system_prompt, "user": user_query}
+    """
+    system_prompt = load_prompt_template("task_math")
+    
+    if question_type == 'multi_choice':
+        formatted_choices = "\n".join(f"{label}. {text}" for label, text in zip(choices['labels'], choices['text']))
+        user_query = f"{query}\n\n## Options:\n{formatted_choices}"
+    else:
+        user_query = query
+    
+    return {"system": system_prompt, "user": user_query}
+
+
 def generate_task_query(task_name, sample_data):
     """Generate query prompt based on task name and sample_data.
 
@@ -180,5 +239,18 @@ def generate_task_query(task_name, sample_data):
         return format_commonsense_qa_prompt(sample_data['query'], sample_data['choices'])
     elif task_name == "arc_challenge":
         return format_commonsense_qa_prompt(sample_data['query'], sample_data['choices'])
+    elif task_name == "geometry3k":
+        return format_math_prompt(sample_data['query'])
+    elif task_name == "mathvista":
+        return format_mathvista_prompt(sample_data['query'], sample_data['choices'], sample_data['question_type'])
+    elif task_name.startswith("charades_ego"):
+        task_type = task_name.split("_")[-1]  # 'activity', 'verb', or 'object'
+        return format_charades_ego_prompt(
+            query=sample_data['query'],
+            choices=sample_data['choices'],
+            id_to_label=sample_data['id_to_label'],
+            task_type=task_type,
+            top_k=sample_data['top_k']
+        )
     else:
         raise ValueError(f"Unknown task name: {task_name}")
