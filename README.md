@@ -318,6 +318,12 @@ The data generation pipeline consists of three main steps:
 2. **Generate LLM Embeddings** - Create embeddings for LLM candidates from their metadata
 3. **API Calling & Evaluation** - Call LLM APIs, evaluate responses, and generate unified embeddings + routing data
 
+#### 🎨 Visual Interface (ComfyUI)
+
+For a more intuitive, modular experience, you can use our **ComfyUI** integration to visually build and execute the data generation pipeline. This allows you to select datasets, configure LLMs, and monitor the process graphically.
+
+👉 **[Learn how to use the ComfyUI Interface](ComfyUI/README.md)**
+
 #### Quick Start
 
 Start with the sample configuration file:
