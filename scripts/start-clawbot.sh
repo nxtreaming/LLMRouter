@@ -242,25 +242,43 @@ main() {
 
     # Start OpenClaw Gateway (if needed)
     if [ "$NO_GATEWAY" = false ]; then
-        info "Starting OpenClaw Gateway..."
-
-        # Stop any existing Gateway
-        pkill -9 -f "openclaw-gateway" 2>/dev/null || true
-        pkill -9 -f "openclaw gateway" 2>/dev/null || true
-        sleep 1
-
-        nohup openclaw gateway run --bind loopback --port 18789 --force > "$GATEWAY_LOG" 2>&1 &
-        GATEWAY_PID=$!
-
-        # Wait for Gateway to start
-        sleep 3
-        if kill -0 "$GATEWAY_PID" 2>/dev/null; then
-            success "OpenClaw Gateway started (PID: $GATEWAY_PID)"
-            echo "       WebSocket: ws://127.0.0.1:18789"
-            echo "       Log: $GATEWAY_LOG"
+        # Check if openclaw is installed
+        if ! command -v openclaw &> /dev/null; then
+            warn "OpenClaw CLI not found!"
+            echo ""
+            echo "       To install OpenClaw:"
+            echo "         npm install -g openclaw"
+            echo ""
+            echo "       Or run without gateway:"
+            echo "         $0 --no-gateway"
+            echo ""
+            warn "Continuing without OpenClaw Gateway..."
         else
-            warn "OpenClaw Gateway may already be running or failed to start"
-            echo "       Check log: $GATEWAY_LOG"
+            info "Starting OpenClaw Gateway..."
+
+            # Stop any existing Gateway
+            pkill -9 -f "openclaw-gateway" 2>/dev/null || true
+            pkill -9 -f "openclaw gateway" 2>/dev/null || true
+            sleep 1
+
+            nohup openclaw gateway run --bind loopback --port 18789 --force > "$GATEWAY_LOG" 2>&1 &
+            GATEWAY_PID=$!
+
+            # Wait for Gateway to start
+            sleep 3
+            if kill -0 "$GATEWAY_PID" 2>/dev/null; then
+                success "OpenClaw Gateway started (PID: $GATEWAY_PID)"
+                echo "       WebSocket: ws://127.0.0.1:18789"
+                echo "       Log: $GATEWAY_LOG"
+            else
+                warn "OpenClaw Gateway failed to start"
+                echo "       Check log: $GATEWAY_LOG"
+                echo ""
+                echo "       Make sure you have configured:"
+                echo "         openclaw config set slack.token \"xoxb-your-token\""
+                echo "       Or:"
+                echo "         openclaw config set discord.token \"your-token\""
+            fi
         fi
     else
         info "Skipping OpenClaw Gateway (--no-gateway)"
