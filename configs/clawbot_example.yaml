@@ -68,6 +68,23 @@ api_keys:
   anthropic: ${ANTHROPIC_API_KEY}
 
 # ============================================================
+# Optional: Routing Memory (Retrieval-Augmented Routing)
+# ============================================================
+# When enabled, ClawBot Router persists (query -> selected model) pairs to disk
+# and retrieves top-k similar past queries to help the `llm` routing strategy.
+memory:
+  enabled: false
+  # If omitted/empty, defaults to: ~/.llmrouter/clawbot_memory.jsonl
+  # path: "${HOME}/.llmrouter/clawbot_memory.jsonl"
+  top_k: 10
+  retriever_model: "facebook/contriever-msmarco"
+  device: "cpu"
+  max_length: 256
+  max_query_chars: 500
+  max_prompt_chars: 200
+  per_user: false
+
+# ============================================================
 # LLM Backend Configuration
 # ============================================================
 llms:
@@ -124,6 +141,7 @@ llms:
 #   "models": {
 #     "providers": {
 #       "clawbot": {
+#         "api": "openai-completions",
 #         "baseUrl": "http://localhost:8000/v1",
 #         "apiKey": "not-needed",
 #         "models": [{"id": "auto", "name": "ClawBot Router"}]

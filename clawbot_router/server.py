@@ -51,6 +51,7 @@ class ChatRequest(BaseModel):
     temperature: Optional[float] = None
     max_tokens: Optional[int] = 4096
     stream: Optional[bool] = False
+    user: Optional[str] = None  # Optional user id (used for memory scoping if enabled)
 
 
 # ============================================================
@@ -345,8 +346,9 @@ def create_app(config: ClawBotConfig = None, config_path: str = None) -> FastAPI
         # Select model
         available_models = list(config.llms.keys())
         if request.model == "auto" or request.model not in available_models:
-            selected_model = await router.select_model(user_query)
-            print(f"[Router] Query: '{user_query[:50]}...' → {selected_model}")
+            selected_model = await router.select_model(user_query, user=request.user)
+            # ASCII-only log to avoid Windows GBK UnicodeEncodeError.
+            print(f"[Router] Query: '{user_query[:50]}...' -> {selected_model}")
         else:
             selected_model = request.model
 

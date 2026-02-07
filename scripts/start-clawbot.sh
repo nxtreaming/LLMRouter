@@ -309,9 +309,13 @@ main() {
                 echo "       Check log: $GATEWAY_LOG"
                 echo ""
                 echo "       Make sure you have configured:"
-                echo "         openclaw config set slack.token \"xoxb-your-token\""
-                echo "       Or:"
-                echo "         openclaw config set discord.token \"your-token\""
+                echo "         Edit ~/.openclaw/openclaw.json and set:"
+                echo "           - channels.slack.botToken (xoxb-...)"
+                echo "           - channels.slack.appToken (xapp-...)"
+                echo "           - models.providers.clawbot.baseUrl (http://127.0.0.1:${ROUTER_PORT}/v1)"
+                echo "           - models.providers.clawbot.api (openai-completions)"
+                echo ""
+                echo "       See: clawbot_router/README.md"
             fi
         fi
     else

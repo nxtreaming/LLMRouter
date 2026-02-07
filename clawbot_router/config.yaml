@@ -21,6 +21,23 @@ api_keys:
   openai: ${OPENAI_API_KEY}
   anthropic: ${ANTHROPIC_API_KEY}
 
+# Optional: Routing Memory (Retrieval-Augmented Routing)
+# When enabled, ClawBot Router persists (query -> selected model) pairs to disk
+# and retrieves top-k similar past queries to help the `llm` routing strategy.
+memory:
+  enabled: false
+  # JSONL file path for persistence (relative paths resolve against this config file directory)
+  # If omitted/empty, defaults to: ~/.llmrouter/clawbot_memory.jsonl
+  # path: "${HOME}/.llmrouter/clawbot_memory.jsonl"
+  top_k: 10
+  # Dense retriever (Contriever). First run will download this model if not present.
+  retriever_model: "facebook/contriever-msmarco"
+  device: "cpu"          # "cpu" or "cuda"
+  max_length: 256        # tokenizer max length
+  max_query_chars: 500   # truncate stored queries
+  max_prompt_chars: 200  # truncate retrieved queries when inserting into router prompt
+  per_user: false        # if true and request has `user`, retrieve memory for the same user only
+
 # LLM Backend Configuration
 llms:
   llama-3.1-8b:

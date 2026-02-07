@@ -12,6 +12,22 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 
 
+def _parse_bool(value: Any, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ("1", "true", "yes", "y", "on"):
+            return True
+        if v in ("0", "false", "no", "n", "off", ""):
+            return False
+    return default
+
+
 @dataclass
 class LLMConfig:
     """Single LLM configuration"""
@@ -51,6 +67,34 @@ class RouterConfig:
 
 
 @dataclass
+class MemoryConfig:
+    """
+    Optional routing memory.
+
+    When enabled, the server persists (query -> selected model) pairs to disk and
+    retrieves top-k similar past queries for future routing decisions.
+
+    Current implementation only uses memory to augment `router.strategy: llm`.
+    """
+
+    enabled: bool = False
+    path: str = ""  # JSONL path; relative paths are resolved against the config file directory.
+    top_k: int = 10
+
+    # Dense retriever (Contriever by default)
+    retriever_model: str = "facebook/contriever-msmarco"
+    device: str = "cpu"  # "cpu" or "cuda"
+    max_length: int = 256  # retriever tokenizer max_length
+
+    # Guardrails for stored/prompt text size
+    max_query_chars: int = 500
+    max_prompt_chars: int = 200
+
+    # If true and request provides a user id, retrieve from the same user only.
+    per_user: bool = False
+
+
+@dataclass
 class ClawBotConfig:
     """Main ClawBot configuration"""
     # Server settings
@@ -66,6 +110,13 @@ class ClawBotConfig:
 
     # API Keys
     api_keys: Dict[str, Any] = field(default_factory=dict)
+
+    # Routing memory (optional)
+    memory: MemoryConfig = field(default_factory=MemoryConfig)
+
+    # Origin metadata (useful for resolving relative paths)
+    config_path: Optional[str] = None
+    config_dir: Optional[str] = None
 
     # Key cycling state
     _nvidia_key_cycle: Any = field(default=None, repr=False)
@@ -84,6 +135,8 @@ class ClawBotConfig:
         data = cls._expand_env_vars(data)
 
         config = cls()
+        config.config_path = yaml_path
+        config.config_dir = os.path.dirname(os.path.abspath(yaml_path))
 
         # Server settings
         serve_config = data.get("serve", {})
@@ -115,6 +168,21 @@ class ClawBotConfig:
             llmrouter_name=router_data.get("llmrouter", {}).get("name") or router_data.get("name"),
             llmrouter_config=router_data.get("llmrouter", {}).get("config_path") or router_data.get("config_path"),
             llmrouter_model_path=router_data.get("llmrouter", {}).get("model_path") or router_data.get("model_path"),
+        )
+
+        # Memory settings
+        memory_data = data.get("memory", {}) or {}
+        default_memory = MemoryConfig()
+        config.memory = MemoryConfig(
+            enabled=_parse_bool(memory_data.get("enabled", default_memory.enabled), default_memory.enabled),
+            path=str(memory_data.get("path", default_memory.path) or ""),
+            top_k=int(memory_data.get("top_k", default_memory.top_k) or default_memory.top_k),
+            retriever_model=str(memory_data.get("retriever_model", default_memory.retriever_model) or default_memory.retriever_model),
+            device=str(memory_data.get("device", default_memory.device) or default_memory.device),
+            max_length=int(memory_data.get("max_length", default_memory.max_length) or default_memory.max_length),
+            max_query_chars=int(memory_data.get("max_query_chars", default_memory.max_query_chars) or default_memory.max_query_chars),
+            max_prompt_chars=int(memory_data.get("max_prompt_chars", default_memory.max_prompt_chars) or default_memory.max_prompt_chars),
+            per_user=_parse_bool(memory_data.get("per_user", default_memory.per_user), default_memory.per_user),
         )
 
         # LLM configurations

@@ -566,6 +566,7 @@ OpenClaw Integration:
     "models": {
       "providers": {
         "clawbot": {
+          "api": "openai-completions",
           "baseUrl": "http://localhost:8000/v1",
           "apiKey": "not-needed",
           "models": [{"id": "auto", "name": "ClawBot Router"}]
