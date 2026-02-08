@@ -36,7 +36,7 @@
 
 ## 📰 News
 
-- 🔗 **[2026-02]**: **ClawBot Router** - OpenAI-compatible server with OpenClaw integration! Deploy LLMRouter as a production API server that works seamlessly with Slack, Discord, and other messaging platforms via [OpenClaw](https://github.com/openclaw/openclaw). Features include multimodal understanding (image/audio/video), retrieval-augmented routing memory, streaming support, and all 16+ LLMRouter routing strategies. See [ClawBot Router Integration](#-clawbot-router-openclaw-integration).
+- 🔗 **[2026-02]**: **ClawBot Router** - OpenAI-compatible server with OpenClaw integration!We've also released llmrouter-lib v0.3.0. Deploy LLMRouter as a production API server that works seamlessly with Slack, Discord, and other messaging platforms via [OpenClaw](https://github.com/openclaw/openclaw). Features include multimodal understanding (image/audio/video), retrieval-augmented routing memory, streaming support, and all 16+ LLMRouter routing strategies. See [ClawBot Router Integration](#-clawbot-router-openclaw-integration).
 
 - ⭐ **[2026-01]**: **LLMRouter** just crossed 1K GitHub stars! We've also released llmrouter-lib v0.2.0. Updates include service-specific dict configs (OpenAI, Anthropic, etc.) and multimodal routing (Video/Image + Text) on Geometry3K, MathVista, and Charades-Ego—all in the first unified open-source LLM routing library with 16+ routers, a unified CLI, Gradio UI, and 11 datasets. Install via pip install llmrouter-lib. More updates soon! 🚀
 
