@@ -1,7 +1,7 @@
 # ============================================================
-# ClawBot Router Configuration Example
+# OpenClaw Router Configuration Example
 # ============================================================
-# Start: llmrouter serve --config configs/clawbot_example.yaml
+# Start: llmrouter serve --config configs/openclaw_example.yaml
 # ============================================================
 
 # Server settings
@@ -70,12 +70,12 @@ api_keys:
 # ============================================================
 # Optional: Routing Memory (Retrieval-Augmented Routing)
 # ============================================================
-# When enabled, ClawBot Router persists (query -> selected model) pairs to disk
+# When enabled, OpenClaw Router persists (query -> selected model) pairs to disk
 # and retrieves top-k similar past queries to help the `llm` routing strategy.
 memory:
   enabled: false
-  # If omitted/empty, defaults to: ~/.llmrouter/clawbot_memory.jsonl
-  # path: "${HOME}/.llmrouter/clawbot_memory.jsonl"
+  # If omitted/empty, defaults to: ~/.llmrouter/openclaw_memory.jsonl
+  # path: "${HOME}/.llmrouter/openclaw_memory.jsonl"
   top_k: 10
   retriever_model: "facebook/contriever-msmarco"
   device: "cpu"
@@ -140,17 +140,17 @@ llms:
 # {
 #   "models": {
 #     "providers": {
-#       "clawbot": {
+#       "openclaw": {
 #         "api": "openai-completions",
 #         "baseUrl": "http://localhost:8000/v1",
 #         "apiKey": "not-needed",
-#         "models": [{"id": "auto", "name": "ClawBot Router"}]
+#         "models": [{"id": "auto", "name": "OpenClaw Router"}]
 #       }
 #     }
 #   },
 #   "agents": {
 #     "defaults": {
-#       "model": {"primary": "clawbot/auto"}
+#       "model": {"primary": "openclaw/auto"}
 #     }
 #   }
 # }

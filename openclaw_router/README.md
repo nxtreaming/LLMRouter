@@ -1,14 +1,14 @@
-# ClawBot Router
+# OpenClaw Router
 
-ClawBot Router is an OpenAI-compatible API server that routes each request to the most suitable backend LLM (Together, NVIDIA, OpenAI-compatible endpoints, etc.). It is designed to integrate cleanly with OpenClaw so you can use it from Slack (and other channels supported by OpenClaw).
+OpenClaw Router is an OpenAI-compatible API server that routes each request to the most suitable backend LLM (Together, NVIDIA, OpenAI-compatible endpoints, etc.). It is designed to integrate cleanly with OpenClaw so you can use it from Slack (and other channels supported by OpenClaw).
 
-## Why OpenClaw + ClawBot Router
+## Why OpenClaw + OpenClaw Router
 
-Pairing OpenClaw (channels + agents) with ClawBot Router (OpenAI-compatible routing layer) gives you:
+Pairing OpenClaw (channels + agents) with OpenClaw Router (OpenAI-compatible routing layer) gives you:
 
 - A Slack-native UX: talk to your bot from mobile/desktop without building a custom UI.
 - One stable endpoint: OpenClaw calls a single `baseUrl`, while the Router selects the best backend model per request.
-- Provider flexibility: swap Together/NVIDIA/OpenAI-compatible backends in `clawbot_router/config.yaml` without touching Slack/OpenClaw.
+- Provider flexibility: swap Together/NVIDIA/OpenAI-compatible backends in `openclaw_router/config.yaml` without touching Slack/OpenClaw.
 - Key isolation: upstream LLM API keys stay on the server (Router), not on clients.
 - Network simplicity: with Slack Socket Mode, you typically only need outbound internet from the server; no public inbound webhook URL.
 - Better ops/debuggability: central logs, health checks, and optional `[model]` prefixes to verify routing decisions.
@@ -24,7 +24,7 @@ Pairing OpenClaw (channels + agents) with ClawBot Router (OpenAI-compatible rout
 
 ## Overview
 
-High level flow (Slack + OpenClaw + ClawBot Router):
+High level flow (Slack + OpenClaw + OpenClaw Router):
 
 ```text
 Slack (mobile/desktop)
@@ -35,7 +35,7 @@ OpenClaw (Slack channel, Socket Mode)
         |
         | HTTP (OpenAI-compatible): POST /v1/chat/completions  model="auto"
         v
-ClawBot Router (FastAPI, default :8000)
+OpenClaw Router (FastAPI, default :8000)
         |
         | (routing: built-in strategies or original LLMRouter ML routers)
         |
@@ -46,8 +46,8 @@ Upstream LLM Provider(s)
 
 Key idea:
 - OpenClaw behaves like an OpenAI client.
-- ClawBot Router behaves like an OpenAI-compatible server.
-- ClawBot Router then calls your real model providers using the API keys you configure in `clawbot_router/config.yaml`.
+- OpenClaw Router behaves like an OpenAI-compatible server.
+- OpenClaw Router then calls your real model providers using the API keys you configure in `openclaw_router/config.yaml`.
 
 ## Installation
 
@@ -97,23 +97,23 @@ Common install/runtime issues:
 
 You typically configure 2 files:
 
-1. `clawbot_router/config.yaml`
+1. `openclaw_router/config.yaml`
 - Controls which backend models exist, how routing works, and which API keys to use when calling upstream providers.
 
 2. `~/.openclaw/openclaw.json`
-- Tells OpenClaw how to call ClawBot Router (as a custom model provider).
+- Tells OpenClaw how to call OpenClaw Router (as a custom model provider).
 - Configures Slack tokens and Socket Mode for receiving events.
 
 Important: `~/.openclaw/openclaw.json` is a full OpenClaw config. You should edit/merge specific sections, not replace the whole file.
 
 ## Step-by-Step (Recommended: One Script Starts Router + Gateway)
 
-### 1) Configure ClawBot Router backends (API keys live here)
+### 1) Configure OpenClaw Router backends (API keys live here)
 
-Edit `clawbot_router/config.yaml`.
+Edit `openclaw_router/config.yaml`.
 
 Notes:
-- The `api_keys` section is used when ClawBot Router calls upstream providers. This is where you put Together/NVIDIA/OpenAI keys.
+- The `api_keys` section is used when OpenClaw Router calls upstream providers. This is where you put Together/NVIDIA/OpenAI keys.
 - OpenClaw does not need the upstream provider keys. OpenClaw only calls your Router.
 
 Example: Together (OpenAI-compatible)
@@ -151,9 +151,9 @@ llms:
     context_limit: 32768
 ```
 
-### 2) Configure OpenClaw to call your Router (provider: `clawbot`)
+### 2) Configure OpenClaw to call your Router (provider: `openclaw`)
 
-In `~/.openclaw/openclaw.json`, ensure these keys exist under `models.providers.clawbot`.
+In `~/.openclaw/openclaw.json`, ensure these keys exist under `models.providers.openclaw`.
 
 This is a fragment (merge into your existing JSON):
 
@@ -161,30 +161,30 @@ This is a fragment (merge into your existing JSON):
 {
   "models": {
     "providers": {
-      "clawbot": {
+      "openclaw": {
         "api": "openai-completions",
         "baseUrl": "http://127.0.0.1:8000/v1",
         "apiKey": "not-needed",
-        "models": [{"id": "auto", "name": "ClawBot Router"}]
+        "models": [{"id": "auto", "name": "OpenClaw Router"}]
       }
     }
   },
   "agents": {
     "defaults": {
-      "model": {"primary": "clawbot/auto"}
+      "model": {"primary": "openclaw/auto"}
     }
   }
 }
 ```
 
 Meaning of the important fields:
-- `baseUrl`: the Router address OpenClaw will send requests to. The Router listens on the `serve.port` you set in `clawbot_router/config.yaml`.
+- `baseUrl`: the Router address OpenClaw will send requests to. The Router listens on the `serve.port` you set in `openclaw_router/config.yaml`.
   - If OpenClaw and Router run on the same machine, use `http://127.0.0.1:<port>/v1`.
   - If they run on different machines/containers, `localhost` will be wrong. Use a reachable IP/hostname.
-- `api`: the protocol OpenClaw uses to talk to your `baseUrl`. ClawBot Router is OpenAI-compatible, so use `openai-completions`.
+- `api`: the protocol OpenClaw uses to talk to your `baseUrl`. OpenClaw Router is OpenAI-compatible, so use `openai-completions`.
 - `apiKey`: can be a placeholder if your Router does not enforce auth. It is not the key for Together/NVIDIA/OpenAI.
 
-If you change the Router port (for example with `./scripts/start-clawbot.sh -p 9000`), you must also update `baseUrl` to match.
+If you change the Router port (for example with `./scripts/start-openclaw.sh -p 9000`), you must also update `baseUrl` to match.
 
 Safe patch (recommended): this updates only the relevant keys and keeps the rest of your OpenClaw config intact.
 
@@ -199,16 +199,16 @@ cfg = json.loads(p.read_text())
 models = cfg.setdefault("models", {})
 models.setdefault("mode", "merge")
 providers = models.setdefault("providers", {})
-claw = providers.setdefault("clawbot", {})
+claw = providers.setdefault("openclaw", {})
 
 claw["api"] = "openai-completions"
 claw["baseUrl"] = "http://127.0.0.1:8000/v1"
 claw.setdefault("apiKey", "not-needed")
-claw.setdefault("models", [{"id": "auto", "name": "ClawBot Router"}])
+claw.setdefault("models", [{"id": "auto", "name": "OpenClaw Router"}])
 
 agents = cfg.setdefault("agents", {})
 defaults = agents.setdefault("defaults", {})
-defaults.setdefault("model", {})["primary"] = "clawbot/auto"
+defaults.setdefault("model", {})["primary"] = "openclaw/auto"
 
 p.write_text(json.dumps(cfg, indent=2))
 print("updated", p)
@@ -275,7 +275,7 @@ Where to configure event subscriptions in the Slack UI:
 From the repository root:
 
 ```bash
-./scripts/start-clawbot.sh
+./scripts/start-openclaw.sh
 ```
 
 This script requires `bash` (Linux/macOS). On Windows, run it under WSL, or start the Router and OpenClaw in separate terminals.
@@ -283,20 +283,20 @@ This script requires `bash` (Linux/macOS). On Windows, run it under WSL, or star
 Common options:
 
 ```bash
-./scripts/start-clawbot.sh -c clawbot_router/config.yaml
-./scripts/start-clawbot.sh -p 9000
-./scripts/start-clawbot.sh -r knnrouter --router-config configs/model_config_test/knnrouter.yaml
-./scripts/start-clawbot.sh --no-gateway
+./scripts/start-openclaw.sh -c openclaw_router/config.yaml
+./scripts/start-openclaw.sh -p 9000
+./scripts/start-openclaw.sh -r knnrouter --router-config configs/model_config_test/knnrouter.yaml
+./scripts/start-openclaw.sh --no-gateway
 ```
 
 Logs:
-- Router: `/tmp/clawbot.log`
+- Router: `/tmp/openclaw.log`
 - Gateway: `/tmp/openclaw-gateway.log`
 
 Stop everything:
 
 ```bash
-./scripts/stop-clawbot.sh
+./scripts/stop-openclaw.sh
 ```
 
 ### 5) Pairing / access approval (required by default in many setups)
@@ -311,7 +311,7 @@ After approval, try sending a DM to the bot or mentioning it in a channel again.
 
 ## Configuration Reference
 
-### Main Router Config (`clawbot_router/config.yaml`)
+### Main Router Config (`openclaw_router/config.yaml`)
 
 Minimal shape:
 
@@ -340,12 +340,12 @@ llms:
 ```
 
 Key fields:
-- `serve.host` / `serve.port`: where ClawBot Router listens.
+- `serve.host` / `serve.port`: where OpenClaw Router listens.
 - `router.strategy`:
   - `random` / `round_robin` / `rules`: deterministic/simple routing.
   - `llm`: uses a "router LLM" to pick the backend model (requires `router.provider/base_url/model` + API key).
   - `llmrouter`: uses the original LLMRouter ML-based routers.
-- `api_keys`: keys used by ClawBot Router when calling upstream providers.
+- `api_keys`: keys used by OpenClaw Router when calling upstream providers.
   - Supports environment variables like `${TOGETHER_API_KEY}`.
 - `llms`: your backend model pool (the Router chooses one of these for each request).
 
@@ -354,8 +354,8 @@ Optional routing memory (retrieval-augmented routing):
 ```yaml
 memory:
   enabled: true
-  # If omitted/empty, defaults to: ~/.llmrouter/clawbot_memory.jsonl
-  path: "${HOME}/.llmrouter/clawbot_memory.jsonl"
+  # If omitted/empty, defaults to: ~/.llmrouter/openclaw_memory.jsonl
+  path: "${HOME}/.llmrouter/openclaw_memory.jsonl"
   top_k: 10
   retriever_model: "facebook/contriever-msmarco"
   device: "cpu"          # "cpu" or "cuda"
@@ -448,9 +448,9 @@ router:
 
 ## Routing Strategies (Built-in + Original LLMRouter)
 
-ClawBot Router supports two routing families:
+OpenClaw Router supports two routing families:
 
-1) Built-in strategies (configure `router.strategy` in `clawbot_router/config.yaml`)
+1) Built-in strategies (configure `router.strategy` in `openclaw_router/config.yaml`)
 - `random`: pick a backend model randomly (optionally weighted)
 - `round_robin`: cycle through backend models
 - `rules`: keyword rules (map keywords to specific backend models)
@@ -462,32 +462,32 @@ ClawBot Router supports two routing families:
 - With the startup script, you can pass the router name via `-r` (and optionally `--router-config`):
 
 ```bash
-./scripts/start-clawbot.sh -r knnrouter
-./scripts/start-clawbot.sh -r knnrouter --router-config configs/model_config_test/knnrouter.yaml
+./scripts/start-openclaw.sh -r knnrouter
+./scripts/start-openclaw.sh -r knnrouter --router-config configs/model_config_test/knnrouter.yaml
 ```
 
 Router config auto-detection:
-- If you do not pass `--router-config`, ClawBot Router will try (in order):
+- If you do not pass `--router-config`, OpenClaw Router will try (in order):
   - `configs/model_config_test/<router>.yaml`
   - `custom_routers/<router>/config.yaml`
   - `configs/model_config_train/<router>.yaml`
 
 List routers:
 - `llmrouter list-routers`
-- Or: `./scripts/start-clawbot.sh --list-routers`
+- Or: `./scripts/start-openclaw.sh --list-routers`
 
 For training ML routers and preparing router configs, follow the main project docs:
 - See `../README.md`
 
 ## Command Line Options
 
-### Startup Script (`./scripts/start-clawbot.sh`)
+### Startup Script (`./scripts/start-openclaw.sh`)
 
-This is the recommended entry point for Slack: it starts both ClawBot Router and the OpenClaw Gateway.
+This is the recommended entry point for Slack: it starts both OpenClaw Router and the OpenClaw Gateway.
 
 | Option | Description |
 |--------|-------------|
-| `-c, --config FILE` | Config file path (default: `clawbot_router/config.yaml`) |
+| `-c, --config FILE` | Config file path (default: `openclaw_router/config.yaml`) |
 | `-p, --port PORT` | Router port (default: `8000`) |
 | `-r, --router NAME` | Router name or built-in strategy (e.g. `random`, `llm`, `knnrouter`) |
 | `--router-config FILE` | Router-specific config file path (optional; auto-detected if omitted) |
@@ -502,10 +502,10 @@ If you prefer not to use the bash script:
 
 ```bash
 # Start Router (OpenAI-compatible API)
-llmrouter serve --config clawbot_router/config.yaml
+llmrouter serve --config openclaw_router/config.yaml
 
 # Optional: use an original LLMRouter ML router
-llmrouter serve --config clawbot_router/config.yaml \
+llmrouter serve --config openclaw_router/config.yaml \
   --router knnrouter \
   --router-config configs/model_config_test/knnrouter.yaml
 
@@ -550,25 +550,25 @@ curl -N http://127.0.0.1:8000/v1/chat/completions \
 
 ```bash
 # Use random built-in strategy
-./scripts/start-clawbot.sh -r random
+./scripts/start-openclaw.sh -r random
 
 # Use round-robin built-in strategy
-./scripts/start-clawbot.sh -r round_robin
+./scripts/start-openclaw.sh -r round_robin
 
 # Use LLM-based routing (uses a small model to decide)
-./scripts/start-clawbot.sh -r llm
+./scripts/start-openclaw.sh -r llm
 
 # Use an original LLMRouter ML router
-./scripts/start-clawbot.sh -r knnrouter
+./scripts/start-openclaw.sh -r knnrouter
 
 # Use an ML router with an explicit router config file
-./scripts/start-clawbot.sh -r knnrouter --router-config configs/model_config_test/knnrouter.yaml
+./scripts/start-openclaw.sh -r knnrouter --router-config configs/model_config_test/knnrouter.yaml
 
 # Custom port
-./scripts/start-clawbot.sh -p 9000
+./scripts/start-openclaw.sh -p 9000
 
 # Start without OpenClaw Gateway (API only)
-./scripts/start-clawbot.sh --no-gateway
+./scripts/start-openclaw.sh --no-gateway
 ```
 
 ## Architecture
@@ -577,7 +577,7 @@ curl -N http://127.0.0.1:8000/v1/chat/completions \
 
 ```text
 +----------------+     +------------------------+     +------------------+
-| Slack User     | --> | OpenClaw Gateway       | --> | ClawBot Router    |
+| Slack User     | --> | OpenClaw Gateway       | --> | OpenClaw Router    |
 | (mobile/desktop)|     | (port 18789, socket)  |     | (port 8000, /v1)  |
 +----------------+     +------------------------+     +--------+---------+
                                                           |
@@ -598,7 +598,7 @@ curl -N http://127.0.0.1:8000/v1/chat/completions \
                             |
                             v
 +-----------------------------------------------------------+
-| ClawBot Router (port 8000)                                |
+| OpenClaw Router (port 8000)                                |
 | - built-in: random / round_robin / rules / llm            |
 | - original LLMRouter routers: knnrouter / mlprouter / ...  |
 +---------------------------+-------------------------------+
@@ -615,11 +615,11 @@ curl -N http://127.0.0.1:8000/v1/chat/completions \
 ```text
 LLMRouter/
   scripts/
-    start-clawbot.sh        # Start ClawBot Router + OpenClaw Gateway
-    stop-clawbot.sh         # Stop all services
+    start-openclaw.sh        # Start OpenClaw Router + OpenClaw Gateway
+    stop-openclaw.sh         # Stop all services
   configs/
-    clawbot_example.yaml
-  clawbot_router/
+    openclaw_example.yaml
+  openclaw_router/
     __init__.py             # Module exports
     __main__.py             # CLI entry point
     server.py               # FastAPI server
@@ -634,13 +634,13 @@ LLMRouter/
 
 ## Logs
 
-- Router log: `/tmp/clawbot.log`
+- Router log: `/tmp/openclaw.log`
 - Gateway log: `/tmp/openclaw-gateway.log`
 
 View logs in real time:
 
 ```bash
-tail -f /tmp/clawbot.log
+tail -f /tmp/openclaw.log
 ```
 
 ## Troubleshooting
@@ -648,7 +648,7 @@ tail -f /tmp/clawbot.log
 ### "No API provider registered for api: undefined" (OpenClaw)
 
 Your `models.providers.<name>.api` is missing. Add:
-- `models.providers.clawbot.api = "openai-completions"`
+- `models.providers.openclaw.api = "openai-completions"`
 
 ### Slack receives nothing / bot never replies
 
@@ -673,7 +673,7 @@ openclaw pairing approve slack <pairing-code>
 If the Router port is already taken, the startup script will try to stop the previous Router process. You can also stop services manually:
 
 ```bash
-./scripts/stop-clawbot.sh
+./scripts/stop-openclaw.sh
 ```
 
 ### Router not loading (ML router)
@@ -685,7 +685,7 @@ If you start with `-r <router>` and it does not load:
   - `custom_routers/<router>/config.yaml`
   - `configs/model_config_train/<router>.yaml`
 
-### "No module named clawbot_router"
+### "No module named openclaw_router"
 
 This usually means you are using a Python environment that does not have this repo installed, or you are running from a different directory/session.
 

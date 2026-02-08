@@ -1,10 +1,10 @@
 """
-ClawBot Router Server
-=====================
+OpenClaw Router Server
+======================
 OpenAI-compatible API server with intelligent LLM routing.
 
 Usage:
-    llmrouter serve --config configs/clawbot_example.yaml
+    llmrouter serve --config configs/openclaw_example.yaml
 
 Or directly:
     python server.py --config config.yaml
@@ -29,12 +29,12 @@ except ImportError:
 
 # Handle both relative and direct imports
 try:
-    from .config import ClawBotConfig, LLMConfig, MODELS_WITHOUT_SYSTEM_ROLE, MODEL_CONTEXT_LIMITS
-    from .routers import ClawBotRouter
+    from .config import OpenClawConfig, LLMConfig, MODELS_WITHOUT_SYSTEM_ROLE, MODEL_CONTEXT_LIMITS
+    from .routers import OpenClawRouter
     from .media import process_multimodal_content, MediaConfig
 except ImportError:
-    from config import ClawBotConfig, LLMConfig, MODELS_WITHOUT_SYSTEM_ROLE, MODEL_CONTEXT_LIMITS
-    from routers import ClawBotRouter
+    from config import OpenClawConfig, LLMConfig, MODELS_WITHOUT_SYSTEM_ROLE, MODEL_CONTEXT_LIMITS
+    from routers import OpenClawRouter
     from media import process_multimodal_content, MediaConfig
 
 
@@ -206,7 +206,7 @@ def clean_streaming_chunk(chunk: Dict) -> Optional[Dict]:
 class LLMBackend:
     """LLM API caller"""
 
-    def __init__(self, config: ClawBotConfig):
+    def __init__(self, config: OpenClawConfig):
         self.config = config
 
     async def call(self, llm_name: str, messages: List[Dict], max_tokens: int = 4096,
@@ -298,21 +298,21 @@ class LLMBackend:
 # FastAPI App Factory
 # ============================================================
 
-def create_app(config: ClawBotConfig = None, config_path: str = None) -> FastAPI:
+def create_app(config: OpenClawConfig = None, config_path: str = None) -> FastAPI:
     """Create FastAPI application"""
     if config is None and config_path:
-        config = ClawBotConfig.from_yaml(config_path)
+        config = OpenClawConfig.from_yaml(config_path)
     elif config is None:
-        config = ClawBotConfig()
+        config = OpenClawConfig()
 
     app = FastAPI(
-        title="ClawBot Router",
+        title="OpenClaw Router",
         description="OpenAI-compatible API with intelligent LLM routing",
         version="1.0.0"
     )
 
     # Initialize components
-    router = ClawBotRouter(config)
+    router = OpenClawRouter(config)
     backend = LLMBackend(config)
 
     @app.get("/health")
@@ -469,7 +469,7 @@ def create_app(config: ClawBotConfig = None, config_path: str = None) -> FastAPI
     @app.get("/")
     async def root():
         return {
-            "name": "ClawBot Router",
+            "name": "OpenClaw Router",
             "version": "1.0.0",
             "strategy": config.router.strategy,
             "llms": list(config.llms.keys()),
@@ -498,7 +498,7 @@ def run_server(app: FastAPI = None, config_path: str = None, host: str = "0.0.0.
 
     print(f"""
 ============================================================
-  ClawBot Router
+  OpenClaw Router
 ============================================================
   Server: http://{host}:{port}
   API:    http://{host}:{port}/v1/chat/completions
@@ -516,7 +516,7 @@ def run_server(app: FastAPI = None, config_path: str = None, host: str = "0.0.0.
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="ClawBot Router Server")
+    parser = argparse.ArgumentParser(description="OpenClaw Router Server")
     parser.add_argument("--config", "-c", help="Config file path")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind")
     parser.add_argument("--port", "-p", type=int, default=8000, help="Port to bind")

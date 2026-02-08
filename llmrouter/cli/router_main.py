@@ -263,7 +263,7 @@ def serve_command(args):
         print("  pip install fastapi uvicorn httpx", file=sys.stderr)
         sys.exit(1)
 
-    from clawbot_router import run_server, create_app, ClawBotConfig
+    from openclaw_router import run_server, create_app, OpenClawConfig
 
     # Load config
     config = None
@@ -271,9 +271,9 @@ def serve_command(args):
         if not os.path.exists(args.config):
             print(f"Error: Config file not found: {args.config}", file=sys.stderr)
             sys.exit(1)
-        config = ClawBotConfig.from_yaml(args.config)
+        config = OpenClawConfig.from_yaml(args.config)
     else:
-        config = ClawBotConfig()
+        config = OpenClawConfig()
 
     # Override config with CLI args
     if args.host:
@@ -315,8 +315,8 @@ Examples:
   # Launch chat interface
   llmrouter chat --router knnrouter --config config.yaml
 
-  # Start OpenAI-compatible API server (ClawBot Router for OpenClaw integration)
-  llmrouter serve --config configs/clawbot_example.yaml
+  # Start OpenAI-compatible API server (OpenClaw Router for OpenClaw integration)
+  llmrouter serve --config configs/openclaw_example.yaml
 
   # List all available routers
   llmrouter list-routers
@@ -531,7 +531,7 @@ For more information on each subcommand, use:
     # ========== SERVE SUBCOMMAND ==========
     serve_parser = subparsers.add_parser(
         "serve",
-        help="Start OpenAI-compatible API server (ClawBot Router)",
+        help="Start OpenAI-compatible API server (OpenClaw Router)",
         description="Start an OpenAI-compatible API server with intelligent routing. "
                     "Supports built-in strategies (random, rules, round_robin, llm) and "
                     "LLMRouter ML-based routers (knnrouter, mlprouter, thresholdrouter, etc.). "
@@ -540,7 +540,7 @@ For more information on each subcommand, use:
         epilog="""
 Examples:
   # Start with a config file
-  llmrouter serve --config configs/clawbot_example.yaml
+  llmrouter serve --config configs/openclaw_example.yaml
 
   # Use a specific LLMRouter ML-based router
   llmrouter serve --config config.yaml --router knnrouter --router-config configs/knnrouter.yaml
@@ -565,17 +565,17 @@ OpenClaw Integration:
   {
     "models": {
       "providers": {
-        "clawbot": {
+        "openclaw": {
           "api": "openai-completions",
           "baseUrl": "http://localhost:8000/v1",
           "apiKey": "not-needed",
-          "models": [{"id": "auto", "name": "ClawBot Router"}]
+          "models": [{"id": "auto", "name": "OpenClaw Router"}]
         }
       }
     },
     "agents": {
       "defaults": {
-        "model": {"primary": "clawbot/auto"}
+        "model": {"primary": "openclaw/auto"}
       }
     }
   }

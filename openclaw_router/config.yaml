@@ -1,5 +1,5 @@
 # ============================================================
-# ClawBot Router Configuration (Together API)
+# OpenClaw Router Configuration (Together API)
 # ============================================================
 
 serve:
@@ -16,7 +16,7 @@ router:
   model: "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"  # small model for routing decisions
 
 # IMPORTANT:
-# For non-nvidia provider in current clawbot config logic, use a SINGLE string key (not list)
+# For non-nvidia provider in current openclaw config logic, use a SINGLE string key (not list)
 api_keys:
   # together: ${TOGETHER_API_KEY}
   # or directly:
@@ -68,7 +68,7 @@ llms:
 # Stores query->model routing history for more consistent decisions
 memory:
   enabled: false
-  path: "${HOME}/.llmrouter/clawbot_memory.jsonl"
+  path: "${HOME}/.llmrouter/openclaw_memory.jsonl"
   top_k: 10
   retriever_model: "facebook/contriever-msmarco"
   device: "cpu"

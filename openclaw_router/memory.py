@@ -139,7 +139,7 @@ class MemoryBank:
         # Resolve path
         path = (cfg.path or "").strip()
         if not path:
-            path = str(Path.home() / ".llmrouter" / "clawbot_memory.jsonl")
+            path = str(Path.home() / ".llmrouter" / "openclaw_memory.jsonl")
         else:
             # Allow "~" and environment variables in config.
             path = os.path.expanduser(os.path.expandvars(path))

@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-ClawBot Router - Main Entry Point
-Run with: python -m clawbot_router --config config.yaml
+OpenClaw Router - Main Entry Point
+Run with: python -m openclaw_router --config config.yaml
 
 Examples:
-    python -m clawbot_router --config config.yaml
-    python -m clawbot_router --config config.yaml --router knnrouter
-    python -m clawbot_router --config config.yaml --router randomrouter --port 9000
+    python -m openclaw_router --config config.yaml
+    python -m openclaw_router --config config.yaml --router knnrouter
+    python -m openclaw_router --config config.yaml --router randomrouter --port 9000
 """
 
 import argparse
 import sys
 
 from .server import create_app, run_server
-from .config import ClawBotConfig
+from .config import OpenClawConfig
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="ClawBot Router - OpenAI-compatible API with intelligent routing",
+        description="OpenClaw Router - OpenAI-compatible API with intelligent routing",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Available Routers:
@@ -43,9 +43,9 @@ Available Routers:
 
     # Load config
     if args.config:
-        config = ClawBotConfig.from_yaml(args.config)
+        config = OpenClawConfig.from_yaml(args.config)
     else:
-        config = ClawBotConfig()
+        config = OpenClawConfig()
 
     # Override with CLI args
     config.host = args.host

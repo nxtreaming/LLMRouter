@@ -1,6 +1,6 @@
 """
-ClawBot Router Strategies
-=========================
+OpenClaw Router Strategies
+==========================
 Supports multiple routing strategies:
 - Built-in: rules, random, round_robin, llm
 - LLMRouter ML-based: knnrouter, mlprouter, thresholdrouter, etc.
@@ -17,10 +17,10 @@ import httpx
 
 # Handle both relative and direct imports
 try:
-    from .config import ClawBotConfig
+    from .config import OpenClawConfig
     from .memory import MemoryBank
 except ImportError:
-    from config import ClawBotConfig
+    from config import OpenClawConfig
     from memory import MemoryBank
 
 
@@ -85,7 +85,7 @@ def select_by_round_robin(models: List[str]) -> str:
 async def select_by_llm(
     query: str,
     models: List[str],
-    config: ClawBotConfig,
+    config: OpenClawConfig,
     *,
     memory_items: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
@@ -408,10 +408,10 @@ class LLMRouterAdapter:
 # Main Router Class
 # ============================================================
 
-class ClawBotRouter:
+class OpenClawRouter:
     """Main router that supports all strategies."""
 
-    def __init__(self, config: ClawBotConfig):
+    def __init__(self, config: OpenClawConfig):
         self.config = config
         self._llmrouter_adapter: Optional[LLMRouterAdapter] = None
         self._memory_bank: Optional[MemoryBank] = None

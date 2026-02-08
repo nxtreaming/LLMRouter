@@ -36,7 +36,7 @@
 
 ## 📰 News
 
-- 🔗 **[2026-02]**: **ClawBot Router** - OpenAI-compatible server with OpenClaw integration!We've also released llmrouter-lib v0.3.0. Deploy LLMRouter as a production API server that works seamlessly with Slack, Discord, and other messaging platforms via [OpenClaw](https://github.com/openclaw/openclaw). Features include multimodal understanding (image/audio/video), retrieval-augmented routing memory, streaming support, and all 16+ LLMRouter routing strategies. See [ClawBot Router Integration](#-clawbot-router-openclaw-integration).
+- 🔗 **[2026-02]**: **OpenClaw Router** - OpenAI-compatible server with OpenClaw integration! We've also released llmrouter-lib v0.3.0. Deploy LLMRouter as a production API server that works seamlessly with Slack, Discord, and other messaging platforms via [OpenClaw](https://github.com/openclaw/openclaw). Features include multimodal understanding (image/audio/video), retrieval-augmented routing memory, streaming support, and all 16+ LLMRouter routing strategies. See [OpenClaw Router Integration](#-openclaw-router-openclaw-integration).
 
 - ⭐ **[2026-01]**: **LLMRouter** just crossed 1K GitHub stars! We've also released llmrouter-lib v0.2.0. Updates include service-specific dict configs (OpenAI, Anthropic, etc.) and multimodal routing (Video/Image + Text) on Geometry3K, MathVista, and Charades-Ego—all in the first unified open-source LLM routing library with 16+ routers, a unified CLI, Gradio UI, and 11 datasets. Install via pip install llmrouter-lib. More updates soon! 🚀
 
@@ -52,7 +52,7 @@
 - [Interactive Chat Interface with a Router](#interactive-chat-interface)
 - [Creating Your Own Routers](#-creating-custom-routers)
 - [Adding Your Own Tasks](#-adding-your-own-tasks)
-- [ClawBot Router (OpenClaw Integration)](#-clawbot-router-openclaw-integration)
+- [OpenClaw Router (OpenClaw Integration)](#-openclaw-router-openclaw-integration)
 - [Acknowledgments](#-acknowledgments)
 - [Citation](#-citation)
 
@@ -656,11 +656,11 @@ For detailed guides on creating custom tasks:
 
 Follow our **step-by-step walkthrough** in the [Charades-Ego Integration Guide](data/charades_ego/README.md) to process paired egocentric videos, generate VLM-based features, and train routers for **Activity**, **Object**, and **Verb** recognition.
 
-## 🔌 ClawBot Router (OpenClaw Integration)
+## 🔌 OpenClaw Router (OpenClaw Integration)
 
-**ClawBot Router** is an OpenAI-compatible API server that brings LLMRouter's intelligent routing to production environments. It integrates seamlessly with [OpenClaw](https://github.com/openclaw/openclaw), enabling you to deploy LLM routing via Slack, Discord, and other messaging platforms.
+**OpenClaw Router** is an OpenAI-compatible API server that brings LLMRouter's intelligent routing to production environments. It integrates seamlessly with [OpenClaw](https://github.com/openclaw/openclaw), enabling you to deploy LLM routing via Slack, Discord, and other messaging platforms.
 
-### Why ClawBot Router?
+### Why OpenClaw Router?
 
 | Feature | Benefit |
 |---------|---------|
@@ -675,7 +675,7 @@ Follow our **step-by-step walkthrough** in the [Charades-Ego Integration Guide](
 
 ```
 ┌─────────────────┐     ┌──────────────────────┐     ┌─────────────────────┐
-│  Slack/Discord  │────▶│   OpenClaw Gateway   │────▶│   ClawBot Router    │
+│  Slack/Discord  │────▶│   OpenClaw Gateway   │────▶│   OpenClaw Router    │
 │  (Mobile/Web)   │     │   (Socket Mode)      │     │   (Port 8000)       │
 └─────────────────┘     └──────────────────────┘     └──────────┬──────────┘
                                                                  │
@@ -690,7 +690,7 @@ Follow our **step-by-step walkthrough** in the [Charades-Ego Integration Guide](
 
 ### Quick Start
 
-**1. Configure ClawBot Router** (`clawbot_router/config.yaml`):
+**1. Configure OpenClaw Router** (`openclaw_router/config.yaml`):
 
 ```yaml
 serve:
@@ -725,13 +725,13 @@ llms:
 
 ```bash
 # Using the startup script (recommended - also starts OpenClaw gateway)
-./scripts/start-clawbot.sh
+./scripts/start-openclaw.sh
 
 # Or directly via CLI
-llmrouter serve --config clawbot_router/config.yaml
+llmrouter serve --config openclaw_router/config.yaml
 
 # With ML-based router
-llmrouter serve --config clawbot_router/config.yaml --router knnrouter
+llmrouter serve --config openclaw_router/config.yaml --router knnrouter
 ```
 
 **3. Test the API**:
@@ -751,7 +751,7 @@ curl http://localhost:8000/v1/chat/completions \
 ```yaml
 memory:
   enabled: true
-  path: "${HOME}/.llmrouter/clawbot_memory.jsonl"
+  path: "${HOME}/.llmrouter/openclaw_memory.jsonl"
   top_k: 10
   retriever_model: "facebook/contriever-msmarco"
 ```
@@ -767,7 +767,7 @@ media:
 ### Documentation
 
 For complete setup instructions including Slack/Discord integration:
-- 📖 **Full Guide**: [clawbot_router/README.md](clawbot_router/README.md)
+- 📖 **Full Guide**: [openclaw_router/README.md](openclaw_router/README.md)
 
 
 ## 🗺️ TODO

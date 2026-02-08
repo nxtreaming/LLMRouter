@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# ClawBot Router + OpenClaw Gateway Startup Script
+# OpenClaw Router + OpenClaw Gateway Startup Script
 # ============================================================
 
 set -e
@@ -14,8 +14,8 @@ NC='\033[0m' # No Color
 
 # Default configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"  # Points to LLMRouter root
-CONFIG_FILE="${SCRIPT_DIR}/clawbot_router/config.yaml"
-ROUTER_LOG="/tmp/clawbot.log"
+CONFIG_FILE="${SCRIPT_DIR}/openclaw_router/config.yaml"
+ROUTER_LOG="/tmp/openclaw.log"
 GATEWAY_LOG="/tmp/openclaw-gateway.log"
 ROUTER_PORT=8000
 ROUTER_NAME=""
@@ -34,7 +34,7 @@ show_help() {
     echo "Usage: $0 [options]"
     echo ""
     echo "Options:"
-    echo "  -c, --config FILE       Config file path (default: clawbot_router/config.yaml)"
+    echo "  -c, --config FILE       Config file path (default: openclaw_router/config.yaml)"
     echo "  -p, --port PORT         Router port (default: 8000)"
     echo "  -r, --router NAME       Use specified router (e.g., knnrouter, mlprouter, randomrouter)"
     echo "  --router-config FILE    Router config file path"
@@ -147,7 +147,7 @@ cleanup() {
     # Stop Router
     if [ -n "$ROUTER_PID" ] && kill -0 "$ROUTER_PID" 2>/dev/null; then
         kill "$ROUTER_PID" 2>/dev/null || true
-        success "ClawBot Router stopped"
+        success "OpenClaw Router stopped"
     fi
 
     # Stop Gateway
@@ -212,7 +212,7 @@ wait_for_service() {
 show_banner() {
     echo -e "${GREEN}"
     echo "============================================================"
-    echo "  ClawBot Router + OpenClaw Gateway"
+    echo "  OpenClaw Router + OpenClaw Gateway"
     echo "============================================================"
     echo -e "${NC}"
 }
@@ -233,12 +233,12 @@ main() {
     # Check Router port
     if check_port "$ROUTER_PORT"; then
         warn "Port $ROUTER_PORT is in use, stopping old process..."
-        pkill -f "python -m clawbot_router" 2>/dev/null || true
+        pkill -f "python -m openclaw_router" 2>/dev/null || true
         sleep 2
     fi
 
     # Build startup command
-    ROUTER_CMD=(python -m clawbot_router --config "$CONFIG_FILE" --port "$ROUTER_PORT")
+    ROUTER_CMD=(python -m openclaw_router --config "$CONFIG_FILE" --port "$ROUTER_PORT")
 
     if [ -n "$ROUTER_NAME" ]; then
         ROUTER_CMD+=(--router "$ROUTER_NAME")
@@ -253,8 +253,8 @@ main() {
         ROUTER_CMD+=(--no-prefix)
     fi
 
-    # Start ClawBot Router
-    info "Starting ClawBot Router..."
+    # Start OpenClaw Router
+    info "Starting OpenClaw Router..."
     cd "$SCRIPT_DIR"
 
     # Run using nohup
@@ -262,12 +262,12 @@ main() {
     ROUTER_PID=$!
 
     # Wait for Router to start
-    if wait_for_service "http://localhost:$ROUTER_PORT/health" "ClawBot Router"; then
-        success "ClawBot Router started (PID: $ROUTER_PID)"
+    if wait_for_service "http://localhost:$ROUTER_PORT/health" "OpenClaw Router"; then
+        success "OpenClaw Router started (PID: $ROUTER_PID)"
         echo "       API: http://localhost:$ROUTER_PORT/v1/chat/completions"
         echo "       Log: $ROUTER_LOG"
     else
-        error "ClawBot Router failed to start, check log: $ROUTER_LOG"
+        error "OpenClaw Router failed to start, check log: $ROUTER_LOG"
         cat "$ROUTER_LOG"
         exit 1
     fi
@@ -312,10 +312,10 @@ main() {
                 echo "         Edit ~/.openclaw/openclaw.json and set:"
                 echo "           - channels.slack.botToken (xoxb-...)"
                 echo "           - channels.slack.appToken (xapp-...)"
-                echo "           - models.providers.clawbot.baseUrl (http://127.0.0.1:${ROUTER_PORT}/v1)"
-                echo "           - models.providers.clawbot.api (openai-completions)"
+                echo "           - models.providers.openclaw.baseUrl (http://127.0.0.1:${ROUTER_PORT}/v1)"
+                echo "           - models.providers.openclaw.api (openai-completions)"
                 echo ""
-                echo "       See: clawbot_router/README.md"
+                echo "       See: openclaw_router/README.md"
             fi
         fi
     else
@@ -327,7 +327,7 @@ main() {
     echo -e "${GREEN}  Services Started!${NC}"
     echo -e "${GREEN}============================================================${NC}"
     echo ""
-    echo "  ClawBot Router: http://localhost:$ROUTER_PORT"
+    echo "  OpenClaw Router: http://localhost:$ROUTER_PORT"
     if [ "$NO_GATEWAY" = false ]; then
         echo "  OpenClaw Gateway: ws://127.0.0.1:18789"
     fi

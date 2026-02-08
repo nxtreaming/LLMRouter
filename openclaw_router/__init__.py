@@ -1,6 +1,6 @@
 """
-ClawBot Router
-==============
+OpenClaw Router
+===============
 OpenAI-compatible API server with intelligent LLM routing.
 
 Supports:
@@ -8,13 +8,13 @@ Supports:
 - LLMRouter ML-based routers: knnrouter, mlprouter, thresholdrouter, etc.
 
 Usage:
-    llmrouter serve --config configs/clawbot_example.yaml
+    llmrouter serve --config configs/openclaw_example.yaml
 
 Or directly:
-    cd clawbot_router && python server.py --config config.yaml
+    cd openclaw_router && python server.py --config config.yaml
 """
 
-from .config import ClawBotConfig
+from .config import OpenClawConfig
 
 
 def create_app(*args, **kwargs):
@@ -29,4 +29,4 @@ def run_server(*args, **kwargs):
     return _run_server(*args, **kwargs)
 
 
-__all__ = ["create_app", "run_server", "ClawBotConfig"]
+__all__ = ["create_app", "run_server", "OpenClawConfig"]
