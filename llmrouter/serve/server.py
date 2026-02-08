@@ -1,12 +1,12 @@
 """
 LLMRouter OpenAI-Compatible Server
 ==================================
-提供 OpenAI 兼容的 API，可直接与 OpenClaw 等前端集成。
+Provides an OpenAI-compatible API that integrates directly with OpenClaw and other frontends.
 
-启动方式:
+Usage:
     llmrouter serve --config serve_config.yaml
 
-或者代码调用:
+Or via code:
     from llmrouter.serve import create_app, run_server
     app = create_app(config_path="serve_config.yaml")
     run_server(app, port=8000)
@@ -56,7 +56,7 @@ class ChatRequest(BaseModel):
 # ============================================================
 
 class RouterAdapter:
-    """LLMRouter 适配器"""
+    """LLMRouter adapter"""
 
     def __init__(self, router_name: str, config_path: Optional[str] = None):
         self.router_name = router_name
@@ -65,9 +65,9 @@ class RouterAdapter:
         self._load_router()
 
     def _load_router(self):
-        """加载 router"""
+        """Load router"""
         try:
-            # 添加 LLMRouter 根目录到路径
+            # Add LLMRouter root directory to path
             llmrouter_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             if llmrouter_root not in sys.path:
                 sys.path.insert(0, llmrouter_root)
@@ -81,7 +81,7 @@ class RouterAdapter:
                 self.router = ThresholdRouter(self.config_path)
 
             else:
-                # 动态加载
+                # Dynamic loading
                 import importlib
                 module = importlib.import_module(f"custom_routers.{self.router_name}.router")
                 for attr in dir(module):
@@ -91,15 +91,15 @@ class RouterAdapter:
                             self.router = RouterClass(self.config_path)
                             break
 
-            print(f"✅ Router loaded: {self.router_name}")
+            print(f"[OK] Router loaded: {self.router_name}")
 
         except Exception as e:
-            print(f"⚠️ Failed to load router '{self.router_name}': {e}")
+            print(f"[WARN] Failed to load router '{self.router_name}': {e}")
             print("   Falling back to random selection")
             self.router = None
 
     def route(self, query: str, available_models: List[str]) -> str:
-        """选择模型"""
+        """Select model"""
         if self.router is None:
             import random
             return random.choice(available_models)
@@ -108,16 +108,16 @@ class RouterAdapter:
             result = self.router.route_single({"query": query})
             model_name = result.get("model_name") or result.get("predicted_llm")
 
-            # 检查模型是否可用
+            # Check if model is available
             if model_name in available_models:
                 return model_name
 
-            # 模糊匹配
+            # Fuzzy match
             for m in available_models:
                 if model_name and (model_name.lower() in m.lower() or m.lower() in model_name.lower()):
                     return m
 
-            # 回退
+            # Fallback
             return available_models[0]
 
         except Exception as e:
@@ -130,14 +130,14 @@ class RouterAdapter:
 # ============================================================
 
 class LLMBackend:
-    """LLM 后端调用"""
+    """LLM backend caller"""
 
     def __init__(self, config: ServeConfig):
         self.config = config
 
     async def call(self, llm_name: str, messages: List[Dict], max_tokens: int = 4096,
                    temperature: Optional[float] = None, stream: bool = False):
-        """调用 LLM"""
+        """Call LLM"""
         if llm_name not in self.config.llms:
             raise HTTPException(status_code=404, detail=f"LLM '{llm_name}' not found")
 
@@ -151,7 +151,7 @@ class LLMBackend:
 
     async def _call_sync(self, llm: LLMConfig, messages: List[Dict], max_tokens: int,
                          temperature: Optional[float], api_key: str) -> Dict:
-        """同步调用"""
+        """Synchronous call"""
         async with httpx.AsyncClient() as client:
             headers = {"Content-Type": "application/json"}
             if api_key:
@@ -179,7 +179,7 @@ class LLMBackend:
 
     async def _call_streaming(self, llm: LLMConfig, messages: List[Dict], max_tokens: int,
                               temperature: Optional[float], api_key: str) -> AsyncGenerator:
-        """流式调用"""
+        """Streaming call"""
         async with httpx.AsyncClient() as client:
             headers = {"Content-Type": "application/json"}
             if api_key:
@@ -216,7 +216,7 @@ class LLMBackend:
 # ============================================================
 
 def create_app(config: ServeConfig = None, config_path: str = None) -> FastAPI:
-    """创建 FastAPI 应用"""
+    """Create FastAPI application"""
 
     if config is None and config_path:
         config = ServeConfig.from_yaml(config_path)
@@ -229,7 +229,7 @@ def create_app(config: ServeConfig = None, config_path: str = None) -> FastAPI:
         version="1.0.0"
     )
 
-    # 初始化组件
+    # Initialize components
     router_adapter = RouterAdapter(
         router_name=config.router_name,
         config_path=config.router_config_path
@@ -257,22 +257,22 @@ def create_app(config: ServeConfig = None, config_path: str = None) -> FastAPI:
     async def chat_completions(request: ChatRequest):
         messages = [{"role": m.role, "content": m.content} for m in request.messages]
 
-        # 提取用户查询
+        # Extract user query
         user_query = ""
         for m in reversed(messages):
             if m["role"] == "user":
                 user_query = m["content"][:500]
                 break
 
-        # 选择模型
+        # Select model
         available_models = list(config.llms.keys())
         if request.model == "auto" or request.model not in available_models:
             selected_model = router_adapter.route(user_query, available_models)
-            print(f"[Router] Query: '{user_query[:50]}...' → {selected_model}")
+            print(f"[Router] Query: '{user_query[:50]}...' -> {selected_model}")
         else:
             selected_model = request.model
 
-        # 调用 LLM
+        # Call LLM
         if request.stream:
             async def generate():
                 first_chunk = True
@@ -280,7 +280,7 @@ def create_app(config: ServeConfig = None, config_path: str = None) -> FastAPI:
                     selected_model, messages, request.max_tokens,
                     request.temperature, stream=True
                 ):
-                    # 添加模型前缀
+                    # Add model prefix
                     if first_chunk and config.show_model_prefix and "content" in chunk:
                         try:
                             data = json.loads(chunk[6:])
@@ -300,7 +300,7 @@ def create_app(config: ServeConfig = None, config_path: str = None) -> FastAPI:
                 request.temperature, stream=False
             )
 
-            # 添加模型前缀
+            # Add model prefix
             if config.show_model_prefix and result.get("choices"):
                 content = result["choices"][0].get("message", {}).get("content", "")
                 if content:
@@ -313,7 +313,7 @@ def create_app(config: ServeConfig = None, config_path: str = None) -> FastAPI:
 
 
 def run_server(app: FastAPI = None, config_path: str = None, host: str = "0.0.0.0", port: int = 8000):
-    """运行服务器"""
+    """Run server"""
     if app is None:
         app = create_app(config_path=config_path)
 

@@ -1,12 +1,12 @@
 """
 LLMRouter Serve Module
 ======================
-提供 OpenAI 兼容的 API 服务，可直接与 OpenClaw 等前端集成。
+Provides an OpenAI-compatible API service that integrates directly with OpenClaw and other frontends.
 
-使用方法:
+Usage:
     llmrouter serve --router randomrouter --config config.yaml --port 8000
 
-或在代码中:
+Or in code:
     from llmrouter.serve import create_app, run_server
     app = create_app(router_name="randomrouter", config_path="config.yaml")
     run_server(app, port=8000)

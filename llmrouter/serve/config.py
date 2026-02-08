@@ -11,7 +11,7 @@ import yaml
 
 @dataclass
 class LLMConfig:
-    """单个 LLM 配置"""
+    """Single LLM configuration"""
     name: str
     provider: str
     model_id: str
@@ -25,27 +25,27 @@ class LLMConfig:
 
 @dataclass
 class ServeConfig:
-    """服务配置"""
-    # 服务器设置
+    """Server configuration"""
+    # Server settings
     host: str = "0.0.0.0"
     port: int = 8000
 
-    # Router 设置
+    # Router settings
     router_name: str = "randomrouter"
     router_config_path: Optional[str] = None
 
-    # LLM 后端设置
+    # LLM backend settings
     llms: Dict[str, LLMConfig] = field(default_factory=dict)
 
     # API Keys
     api_keys: Dict[str, List[str]] = field(default_factory=dict)
 
-    # 显示模型名前缀
+    # Show model name prefix
     show_model_prefix: bool = True
 
     @classmethod
     def from_yaml(cls, yaml_path: str) -> "ServeConfig":
-        """从 YAML 文件加载配置"""
+        """Load configuration from YAML file"""
         if not os.path.exists(yaml_path):
             raise FileNotFoundError(f"Config file not found: {yaml_path}")
 
@@ -54,13 +54,13 @@ class ServeConfig:
 
         config = cls()
 
-        # 服务器设置
+        # Server settings
         serve_config = data.get("serve", {})
         config.host = serve_config.get("host", config.host)
         config.port = serve_config.get("port", config.port)
         config.show_model_prefix = serve_config.get("show_model_prefix", config.show_model_prefix)
 
-        # Router 设置
+        # Router settings
         router_config = data.get("router", {})
         config.router_name = router_config.get("name", config.router_name)
         config.router_config_path = router_config.get("config_path")
@@ -68,7 +68,7 @@ class ServeConfig:
         # API Keys
         config.api_keys = data.get("api_keys", {})
 
-        # LLM 配置
+        # LLM configuration
         llms_data = data.get("llms", {})
         for name, llm_config in llms_data.items():
             config.llms[name] = LLMConfig(
@@ -86,15 +86,15 @@ class ServeConfig:
         return config
 
     def get_api_key(self, provider: str) -> Optional[str]:
-        """获取 API key"""
+        """Get API key"""
         keys = self.api_keys.get(provider, [])
         if isinstance(keys, str):
-            # 支持环境变量
+            # Support environment variables
             if keys.startswith("${") and keys.endswith("}"):
                 return os.environ.get(keys[2:-1])
             return keys
         elif isinstance(keys, list) and keys:
-            # 轮询多个 key
+            # Round-robin multiple keys
             if not hasattr(self, "_key_index"):
                 self._key_index = {}
             idx = self._key_index.get(provider, 0)
