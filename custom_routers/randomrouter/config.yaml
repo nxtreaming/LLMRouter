@@ -19,7 +19,7 @@ metric:
 # Hyperparameters
 hparam:
   # Random seed for reproducibility (optional)
-  seed: 42
+  seed: null  # null = 真正随机
 
 # API endpoint for calling routed models
 api_endpoint: 'https://integrate.api.nvidia.com/v1'

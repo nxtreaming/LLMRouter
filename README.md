@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="LLMRouter Logo" width="200">
+  <img src="assets/logo_claw.png" alt="LLMRouter Logo" width="200">
 </div>
 
 <h1 align="center">🚀 LLMRouter: An Open-Source Library for LLM Routing</h1>

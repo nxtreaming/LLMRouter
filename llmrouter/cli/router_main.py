@@ -249,6 +249,50 @@ def version_command(args):
     print(f"LLMRouter version: {version}")
 
 
+def serve_command(args):
+    """Execute the serve subcommand."""
+    import os
+
+    # Check dependencies
+    try:
+        import fastapi
+        import uvicorn
+        import httpx
+    except ImportError:
+        print("Error: FastAPI dependencies required. Install with:", file=sys.stderr)
+        print("  pip install fastapi uvicorn httpx", file=sys.stderr)
+        sys.exit(1)
+
+    from clawbot_router import run_server, create_app, ClawBotConfig
+
+    # Load config
+    config = None
+    if args.config:
+        if not os.path.exists(args.config):
+            print(f"Error: Config file not found: {args.config}", file=sys.stderr)
+            sys.exit(1)
+        config = ClawBotConfig.from_yaml(args.config)
+    else:
+        config = ClawBotConfig()
+
+    # Override config with CLI args
+    if args.host:
+        config.host = args.host
+    if args.port:
+        config.port = args.port
+    if args.router:
+        config.router.strategy = "llmrouter"
+        config.router.llmrouter_name = args.router
+    if args.router_config:
+        config.router.llmrouter_config = args.router_config
+    if args.no_prefix:
+        config.show_model_prefix = False
+
+    # Create and run app
+    app = create_app(config=config)
+    run_server(app, host=config.host, port=config.port)
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create the main argument parser with subcommands."""
     try:
@@ -270,6 +314,9 @@ Examples:
 
   # Launch chat interface
   llmrouter chat --router knnrouter --config config.yaml
+
+  # Start OpenAI-compatible API server (ClawBot Router for OpenClaw integration)
+  llmrouter serve --config configs/clawbot_example.yaml
 
   # List all available routers
   llmrouter list-routers
@@ -480,6 +527,96 @@ For more information on each subcommand, use:
         description="Display LLMRouter version information",
     )
     version_parser.set_defaults(func=version_command)
+
+    # ========== SERVE SUBCOMMAND ==========
+    serve_parser = subparsers.add_parser(
+        "serve",
+        help="Start OpenAI-compatible API server (ClawBot Router)",
+        description="Start an OpenAI-compatible API server with intelligent routing. "
+                    "Supports built-in strategies (random, rules, round_robin, llm) and "
+                    "LLMRouter ML-based routers (knnrouter, mlprouter, thresholdrouter, etc.). "
+                    "Can be directly integrated with OpenClaw and other OpenAI-compatible clients.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Start with a config file
+  llmrouter serve --config configs/clawbot_example.yaml
+
+  # Use a specific LLMRouter ML-based router
+  llmrouter serve --config config.yaml --router knnrouter --router-config configs/knnrouter.yaml
+
+  # Custom port
+  llmrouter serve --config config.yaml --port 9000
+
+Routing Strategies (in config.yaml):
+  Built-in:
+    - random: Random model selection (with optional weights)
+    - round_robin: Rotate through models
+    - rules: Keyword-based routing
+    - llm: Use an LLM to decide
+
+  LLMRouter ML-based (use --router flag or strategy: llmrouter):
+    - knnrouter, mlprouter, svmrouter, mfrouter
+    - thresholdrouter, randomrouter (custom_routers/)
+    - And more...
+
+OpenClaw Integration:
+  In ~/.openclaw/openclaw.json, add:
+  {
+    "models": {
+      "providers": {
+        "clawbot": {
+          "api": "openai-completions",
+          "baseUrl": "http://localhost:8000/v1",
+          "apiKey": "not-needed",
+          "models": [{"id": "auto", "name": "ClawBot Router"}]
+        }
+      }
+    },
+    "agents": {
+      "defaults": {
+        "model": {"primary": "clawbot/auto"}
+      }
+    }
+  }
+        """
+    )
+    serve_parser.add_argument(
+        "--config", "-c",
+        type=str,
+        default=None,
+        help="Path to YAML configuration file",
+    )
+    serve_parser.add_argument(
+        "--host",
+        type=str,
+        default=None,
+        help="Host to bind the server to (default: 0.0.0.0)",
+    )
+    serve_parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=None,
+        help="Port to bind the server to (default: 8000)",
+    )
+    serve_parser.add_argument(
+        "--router",
+        type=str,
+        default=None,
+        help="Router to use (e.g., randomrouter, thresholdrouter)",
+    )
+    serve_parser.add_argument(
+        "--router-config",
+        type=str,
+        default=None,
+        help="Path to router-specific config file",
+    )
+    serve_parser.add_argument(
+        "--no-prefix",
+        action="store_true",
+        help="Disable model name prefix in responses",
+    )
+    serve_parser.set_defaults(func=serve_command)
 
     return parser
 

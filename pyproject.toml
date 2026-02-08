@@ -32,6 +32,9 @@ dependencies = [
   "torch-geometric>=2.3",
   "scipy>=1.10",
   "protobuf>=3.20",
+  "fastapi",
+  "uvicorn",
+  "httpx",
 ]
 
 classifiers = [
@@ -67,4 +70,4 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["llmrouter*"]
+include = ["llmrouter*", "clawbot_router*"]

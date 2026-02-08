@@ -50,6 +50,12 @@ data/chatbot_arena/*.jsonl
 *.log
 routing_log.jsonl
 
+# Local config with real API keys
+config.local.yaml
+*.local.yaml
+.env
+.env.*
+
 # Temporary files
 *.tmp
 .cache/
