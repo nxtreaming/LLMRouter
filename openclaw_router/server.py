@@ -18,7 +18,7 @@ from typing import AsyncGenerator, Optional, Dict, Any, List
 
 # Check dependencies
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
     from fastapi.responses import StreamingResponse
     from pydantic import BaseModel
     import httpx
@@ -30,11 +30,11 @@ except ImportError:
 # Handle both relative and direct imports
 try:
     from .config import OpenClawConfig, LLMConfig, MODELS_WITHOUT_SYSTEM_ROLE, MODEL_CONTEXT_LIMITS
-    from .routers import OpenClawRouter
+    from .routers import OpenClawRouter, _safe_log
     from .media import process_multimodal_content, MediaConfig
 except ImportError:
     from config import OpenClawConfig, LLMConfig, MODELS_WITHOUT_SYSTEM_ROLE, MODEL_CONTEXT_LIMITS
-    from routers import OpenClawRouter
+    from routers import OpenClawRouter, _safe_log
     from media import process_multimodal_content, MediaConfig
 
 
@@ -487,6 +487,120 @@ def create_app(config: OpenClawConfig = None, config_path: str = None) -> FastAP
             "available_routers": router.get_available_routers(),
             "current": config.router.strategy
         }
+
+    @app.websocket("/v1/chat/ws")
+    async def chat_websocket(websocket: WebSocket):
+        """WebSocket endpoint for real-time streaming"""
+        await websocket.accept()
+        try:
+            # Receive request
+            data = await websocket.receive_json()
+            request = ChatRequest(**data)
+            messages = [{"role": m.role, "content": m.content} for m in request.messages]
+
+            # Extract user query for routing
+            user_query = ""
+            last_user_idx = None
+            for i in range(len(messages) - 1, -1, -1):
+                if messages[i]["role"] == "user":
+                    last_user_idx = i
+                    break
+
+            if last_user_idx is not None:
+                raw_content = messages[last_user_idx]["content"]
+                if config.media.enabled:
+                    together_key = config.api_keys.get("together")
+                    processed_text, _ = await process_multimodal_content(
+                        raw_content, config.media, fallback_key=together_key
+                    )
+                    user_query = processed_text[:500]
+                    messages[last_user_idx]["content"] = processed_text
+                else:
+                    user_query = normalize_content(raw_content)[:500]
+
+            if not user_query:
+                user_query = "general query"
+
+            # Select model
+            available_models = list(config.llms.keys())
+            if request.model == "auto" or request.model not in available_models:
+                selected_model = await router.select_model(user_query, user=request.user)
+                _safe_log(f"[WS Router] Query: '{user_query[:50]}...' -> {selected_model}")
+            else:
+                selected_model = request.model
+
+            # Call LLM backend in streaming mode
+            prefix_sent = False
+            content_buffer = ""
+            buffered_chunks = []
+
+            stream_gen = await backend.call(
+                selected_model, messages, request.max_tokens,
+                request.temperature, stream=True
+            )
+
+            async for chunk in stream_gen:
+                if not config.show_model_prefix:
+                    await websocket.send_text(chunk)
+                    continue
+
+                if "[DONE]" in chunk:
+                    if buffered_chunks and not prefix_sent:
+                        content_buffer = re.sub(r'^\[[\w\-\.]+\]\s*', '', content_buffer)
+                        first = buffered_chunks[0]
+                        try:
+                            data_chunk = json.loads(first[6:]) if first.startswith("data: ") else {}
+                            if data_chunk.get("choices") and data_chunk["choices"][0].get("delta"):
+                                data_chunk["choices"][0]["delta"]["content"] = f"[{selected_model}] " + content_buffer
+                                await websocket.send_text(f"data: {json.dumps(data_chunk)}\n\n")
+                        except:
+                            pass
+                    await websocket.send_text(chunk)
+                else:
+                    try:
+                        json_str = chunk[6:] if chunk.startswith("data: ") else chunk
+                        data_chunk = json.loads(json_str.strip())
+                        cleaned = clean_streaming_chunk(data_chunk)
+
+                        if cleaned:
+                            choices = cleaned.get("choices", [])
+                            if choices and "delta" in choices[0]:
+                                content = choices[0]["delta"].get("content", "")
+
+                                if not prefix_sent:
+                                    content_buffer += content
+                                    buffered_chunks.append(chunk)
+
+                                    if len(content_buffer) > 30 or (content_buffer and not content_buffer.startswith("[")):
+                                        content_buffer = re.sub(r'^\[[\w\-\.]+\]\s*', '', content_buffer)
+                                        first = buffered_chunks[0]
+                                        first_data = json.loads(first[6:] if first.startswith("data: ") else first)
+                                        if first_data.get("choices") and first_data["choices"][0].get("delta"):
+                                            first_data["choices"][0]["delta"]["content"] = f"[{selected_model}] " + content_buffer
+                                            await websocket.send_text(f"data: {json.dumps(first_data)}\n\n")
+                                            prefix_sent = True
+                                            buffered_chunks = []
+                                else:
+                                    await websocket.send_json(cleaned)
+                            else:
+                                if prefix_sent:
+                                    await websocket.send_json(cleaned)
+                    except:
+                        await websocket.send_text(chunk)
+
+        except WebSocketDisconnect:
+            _safe_log("[WS] Client disconnected")
+        except Exception as e:
+            _safe_log(f"[WS Error] {type(e).__name__}: {e}")
+            try:
+                await websocket.send_json({"error": str(e)})
+            except:
+                pass
+        finally:
+            try:
+                await websocket.close()
+            except:
+                pass
 
     return app
 

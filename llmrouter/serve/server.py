@@ -22,7 +22,7 @@ from typing import AsyncGenerator, Optional, Dict, Any, List
 
 # FastAPI
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
     from fastapi.responses import StreamingResponse
     from pydantic import BaseModel
     import httpx
@@ -307,7 +307,74 @@ def create_app(config: ServeConfig = None, config_path: str = None) -> FastAPI:
                     result["choices"][0]["message"]["content"] = f"[{selected_model}] {content}"
 
             result["model"] = selected_model
+            result["model"] = selected_model
             return result
+
+    @app.websocket("/v1/chat/ws")
+    async def chat_websocket(websocket: WebSocket):
+        """WebSocket endpoint for real-time streaming"""
+        await websocket.accept()
+        try:
+            # Receive request
+            data = await websocket.receive_json()
+            request = ChatRequest(**data)
+            messages = [{"role": m.role, "content": m.content} for m in request.messages]
+
+            # Extract user query
+            user_query = ""
+            for m in reversed(messages):
+                if m["role"] == "user":
+                    user_query = m["content"][:500]
+                    break
+
+            # Select model
+            available_models = list(config.llms.keys())
+            if request.model == "auto" or request.model not in available_models:
+                selected_model = router_adapter.route(user_query, available_models)
+                print(f"[WS Router] Query: '{user_query[:50]}...' -> {selected_model}")
+            else:
+                selected_model = request.model
+
+            # Call LLM backend in streaming mode
+            first_chunk = True
+            async for chunk in llm_backend.call(
+                selected_model, messages, request.max_tokens,
+                request.temperature, stream=True
+            ):
+                # Add model prefix
+                if first_chunk and config.show_model_prefix and "content" in chunk:
+                    try:
+                        data_chunk = json.loads(chunk[6:])
+                        if data_chunk.get("choices") and data_chunk["choices"][0].get("delta", {}).get("content"):
+                            data_chunk["choices"][0]["delta"]["content"] = f"[{selected_model}] " + data_chunk["choices"][0]["delta"]["content"]
+                            chunk = f"data: {json.dumps(data_chunk)}\n\n"
+                    except:
+                        pass
+                    first_chunk = False
+                
+                if chunk.startswith("data: ") and not chunk.startswith("data: [DONE]"):
+                    try:
+                        # Send as JSON if it's a valid data chunk
+                        json_str = chunk[6:]
+                        await websocket.send_json(json.loads(json_str))
+                    except:
+                        await websocket.send_text(chunk)
+                else:
+                    await websocket.send_text(chunk)
+
+        except WebSocketDisconnect:
+            print("[WS] Client disconnected")
+        except Exception as e:
+            print(f"[WS Error] {type(e).__name__}: {e}")
+            try:
+                await websocket.send_json({"error": str(e)})
+            except:
+                pass
+        finally:
+            try:
+                await websocket.close()
+            except:
+                pass
 
     return app
 

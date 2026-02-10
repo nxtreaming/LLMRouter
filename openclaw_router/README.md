@@ -522,6 +522,7 @@ Once running, the following endpoints are available:
 | `/health` | GET | Health check |
 | `/v1/chat/completions` | POST | Chat completions (OpenAI-compatible) |
 | `/v1/models` | GET | List available models |
+| `/v1/chat/ws` | WS | Real-time streaming chat (WebSocket) |
 | `/routers` | GET | List available routing strategies |
 
 Quick checks:
@@ -544,6 +545,9 @@ curl -N http://127.0.0.1:8000/v1/chat/completions \
     "messages": [{"role": "user", "content": "Hello (streaming)"}],
     "stream": true
   }'
+
+# WebSocket Streaming
+# See tests/test_websocket.py for a Python client example
 ```
 
 ## Usage Examples
