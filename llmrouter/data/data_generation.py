@@ -51,15 +51,34 @@ from llmrouter.data import batch_vlm_describe_images
 setup_environment()
 
 
-def get_n_samples(N=10, random_seed=42, cache_dir=None, charades_ego_path=None):
+def get_n_samples(N=10, random_seed=42, cache_dir=None, charades_ego_path=None, datasets=None):
     """Extract samples from all datasets
 
     Args:
         N: Number of samples per dataset
         random_seed: Random seed for reproducibility
         cache_dir: Optional cache directory for datasets. If None, uses default HuggingFace cache.
+        charades_ego_path: Path to Charades-Ego dataset root.
+        datasets: Optional list of dataset names to include. If None, includes all.
     """
     random.seed(random_seed)
+
+    # all supported datasets
+    all_datasets = [
+        "natural_qa", "trivia_qa", "mmlu", "gpqa", "mbpp", "human_eval", 
+        "gsm8k", "commonsense_qa", "math", "openbook_qa", "arc_challenge", 
+        "geometry3k", "mathvista", 
+        "charades_ego_activity", "charades_ego_object", "charades_ego_verb"
+    ]
+
+    if datasets:
+         # Validate and filter
+         datasets = [d for d in datasets if d in all_datasets]
+         if not datasets:
+             print("Warning: No valid datasets specified. Generating nothing.")
+             return {}
+    else:
+        datasets = all_datasets
 
     # Initialize empty lists for each dataset
     natural_qa_samples = []
@@ -80,248 +99,264 @@ def get_n_samples(N=10, random_seed=42, cache_dir=None, charades_ego_path=None):
     charades_ego_verb_samples = []
 
     # 1. Natural QA dataset
-    try:
-        natural_qa = load_dataset('RUC-NLPIR/FlashRAG_datasets', 'nq',
-                                  cache_dir=cache_dir)
-        split_name = 'train' if 'train' in natural_qa else list(natural_qa.keys())[0]
-        dataset_size = len(natural_qa[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            natural_qa_samples = [natural_qa[split_name][i] for i in indices]
-        else:
-            natural_qa_samples = [natural_qa[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(natural_qa_samples)} samples from Natural QA")
-    except Exception as e:
-        print(f"Error extracting from Natural QA: {e}")
+    if "natural_qa" in datasets:
+        try:
+            natural_qa = load_dataset('RUC-NLPIR/FlashRAG_datasets', 'nq',
+                                      cache_dir=cache_dir)
+            split_name = 'train' if 'train' in natural_qa else list(natural_qa.keys())[0]
+            dataset_size = len(natural_qa[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                natural_qa_samples = [natural_qa[split_name][i] for i in indices]
+            else:
+                natural_qa_samples = [natural_qa[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(natural_qa_samples)} samples from Natural QA")
+        except Exception as e:
+            print(f"Error extracting from Natural QA: {e}")
 
     # 2. Trivia QA dataset
-    try:
-        trivia_qa = load_dataset("trivia_qa", "rc.nocontext",
-                                 cache_dir=cache_dir)
-        split_name = 'train' if 'train' in trivia_qa else list(trivia_qa.keys())[0]
-        dataset_size = len(trivia_qa[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            trivia_qa_samples = [trivia_qa[split_name][i] for i in indices]
-        else:
-            trivia_qa_samples = [trivia_qa[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(trivia_qa_samples)} samples from Trivia QA")
-    except Exception as e:
-        print(f"Error extracting from Trivia QA: {e}")
+    if "trivia_qa" in datasets:
+        try:
+            trivia_qa = load_dataset("trivia_qa", "rc.nocontext",
+                                     cache_dir=cache_dir)
+            split_name = 'train' if 'train' in trivia_qa else list(trivia_qa.keys())[0]
+            dataset_size = len(trivia_qa[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                trivia_qa_samples = [trivia_qa[split_name][i] for i in indices]
+            else:
+                trivia_qa_samples = [trivia_qa[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(trivia_qa_samples)} samples from Trivia QA")
+        except Exception as e:
+            print(f"Error extracting from Trivia QA: {e}")
 
     # 3. MMLU dataset
-    try:
-        mmlu = load_dataset("cais/mmlu", "all", cache_dir=cache_dir)
-        split_name = 'auxiliary_train' if 'auxiliary_train' in mmlu else list(mmlu.keys())[0]
-        dataset_size = len(mmlu[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            mmlu_samples = [mmlu[split_name][i] for i in indices]
-        else:
-            mmlu_samples = [mmlu[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(mmlu_samples)} samples from MMLU")
-    except Exception as e:
-        print(f"Error extracting from MMLU: {e}")
+    if "mmlu" in datasets:
+        try:
+            mmlu = load_dataset("cais/mmlu", "all", cache_dir=cache_dir)
+            split_name = 'auxiliary_train' if 'auxiliary_train' in mmlu else list(mmlu.keys())[0]
+            dataset_size = len(mmlu[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                mmlu_samples = [mmlu[split_name][i] for i in indices]
+            else:
+                mmlu_samples = [mmlu[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(mmlu_samples)} samples from MMLU")
+        except Exception as e:
+            print(f"Error extracting from MMLU: {e}")
 
     # 4. GPQA dataset
-    try:
-        gpqa = load_dataset("Idavidrein/gpqa", "gpqa_main",
-                            cache_dir=cache_dir)
-        split_name = 'train' if 'train' in gpqa else list(gpqa.keys())[0]
-        dataset_size = len(gpqa[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            gpqa_samples = [gpqa[split_name][i] for i in indices]
-        else:
-            gpqa_samples = [gpqa[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(gpqa_samples)} samples from GPQA")
-    except Exception as e:
-        print(f"Error extracting from GPQA: {e}")
+    if "gpqa" in datasets:
+        try:
+            gpqa = load_dataset("Idavidrein/gpqa", "gpqa_main",
+                                cache_dir=cache_dir)
+            split_name = 'train' if 'train' in gpqa else list(gpqa.keys())[0]
+            dataset_size = len(gpqa[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                gpqa_samples = [gpqa[split_name][i] for i in indices]
+            else:
+                gpqa_samples = [gpqa[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(gpqa_samples)} samples from GPQA")
+        except Exception as e:
+            print(f"Error extracting from GPQA: {e}")
 
     # 5. MBPP dataset (loaded from HuggingFace)
-    try:
-        mbpp_dataset = load_dataset("mbpp", "full", cache_dir=cache_dir)
-        split_name = 'train' if 'train' in mbpp_dataset else list(mbpp_dataset.keys())[0]
-        mbpp_samples_all = list(mbpp_dataset[split_name])
-        dataset_size = len(mbpp_samples_all)
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            mbpp_samples = [mbpp_samples_all[i] for i in indices]
-        else:
-            mbpp_samples = mbpp_samples_all
-        print(f"Successfully extracted {len(mbpp_samples)} samples from MBPP")
-    except Exception as e:
-        print(f"Error extracting from MBPP: {e}")
+    if "mbpp" in datasets:
+        try:
+            mbpp_dataset = load_dataset("mbpp", "full", cache_dir=cache_dir)
+            split_name = 'train' if 'train' in mbpp_dataset else list(mbpp_dataset.keys())[0]
+            mbpp_samples_all = list(mbpp_dataset[split_name])
+            dataset_size = len(mbpp_samples_all)
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                mbpp_samples = [mbpp_samples_all[i] for i in indices]
+            else:
+                mbpp_samples = mbpp_samples_all
+            print(f"Successfully extracted {len(mbpp_samples)} samples from MBPP")
+        except Exception as e:
+            print(f"Error extracting from MBPP: {e}")
 
     # 6. HumanEval dataset (loaded from HuggingFace)
-    try:
-        humaneval_dataset = load_dataset("openai/openai_humaneval", cache_dir=cache_dir)
-        split_name = 'test' if 'test' in humaneval_dataset else list(humaneval_dataset.keys())[0]
-        humaneval_samples_all = list(humaneval_dataset[split_name])
-        dataset_size = len(humaneval_samples_all)
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            humaneval_samples = [humaneval_samples_all[i] for i in indices]
-        else:
-            humaneval_samples = humaneval_samples_all
-        print(f"Successfully extracted {len(humaneval_samples)} samples from HumanEval")
-    except Exception as e:
-        print(f"Error extracting from HumanEval: {e}")
+    if "human_eval" in datasets:
+        try:
+            humaneval_dataset = load_dataset("openai/openai_humaneval", cache_dir=cache_dir)
+            split_name = 'test' if 'test' in humaneval_dataset else list(humaneval_dataset.keys())[0]
+            humaneval_samples_all = list(humaneval_dataset[split_name])
+            dataset_size = len(humaneval_samples_all)
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                humaneval_samples = [humaneval_samples_all[i] for i in indices]
+            else:
+                humaneval_samples = humaneval_samples_all
+            print(f"Successfully extracted {len(humaneval_samples)} samples from HumanEval")
+        except Exception as e:
+            print(f"Error extracting from HumanEval: {e}")
 
     # 7. GSM8K dataset
-    try:
-        gsm8k = load_dataset('gsm8k', 'main',
-                             cache_dir=cache_dir)
-        split_name = 'train' if 'train' in gsm8k else list(gsm8k.keys())[0]
-        dataset_size = len(gsm8k[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            gsm8k_samples = [gsm8k[split_name][i] for i in indices]
-        else:
-            gsm8k_samples = [gsm8k[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(gsm8k_samples)} samples from GSM8K")
-    except Exception as e:
-        print(f"Error extracting from GSM8K: {e}")
+    if "gsm8k" in datasets:
+        try:
+            gsm8k = load_dataset('gsm8k', 'main',
+                                 cache_dir=cache_dir)
+            split_name = 'train' if 'train' in gsm8k else list(gsm8k.keys())[0]
+            dataset_size = len(gsm8k[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                gsm8k_samples = [gsm8k[split_name][i] for i in indices]
+            else:
+                gsm8k_samples = [gsm8k[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(gsm8k_samples)} samples from GSM8K")
+        except Exception as e:
+            print(f"Error extracting from GSM8K: {e}")
 
     # 8. CommonsenseQA dataset
-    try:
-        commonsense_qa = load_dataset('commonsense_qa',
-                                      cache_dir=cache_dir)
-        split_name = 'train' if 'train' in commonsense_qa else list(commonsense_qa.keys())[0]
-        dataset_size = len(commonsense_qa[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            commonsense_qa_samples = [commonsense_qa[split_name][i] for i in indices]
-        else:
-            commonsense_qa_samples = [commonsense_qa[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(commonsense_qa_samples)} samples from CommonsenseQA")
-    except Exception as e:
-        print(f"Error extracting from CommonsenseQA: {e}")
+    if "commonsense_qa" in datasets:
+        try:
+            commonsense_qa = load_dataset('commonsense_qa',
+                                          cache_dir=cache_dir)
+            split_name = 'train' if 'train' in commonsense_qa else list(commonsense_qa.keys())[0]
+            dataset_size = len(commonsense_qa[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                commonsense_qa_samples = [commonsense_qa[split_name][i] for i in indices]
+            else:
+                commonsense_qa_samples = [commonsense_qa[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(commonsense_qa_samples)} samples from CommonsenseQA")
+        except Exception as e:
+            print(f"Error extracting from CommonsenseQA: {e}")
 
     # 9. ARC-Challenge dataset
-    try:
-        arc_challenge = load_dataset('allenai/ai2_arc', 'ARC-Challenge',
-                                     cache_dir=cache_dir)
-        split_name = 'train' if 'train' in arc_challenge else list(arc_challenge.keys())[0]
-        dataset_size = len(arc_challenge[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            arc_challenge_samples = [arc_challenge[split_name][i] for i in indices]
-        else:
-            arc_challenge_samples = [arc_challenge[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(arc_challenge_samples)} samples from ARC-Challenge")
-    except Exception as e:
-        print(f"Error extracting from ARC-Challenge: {e}")
+    if "arc_challenge" in datasets:
+        try:
+            arc_challenge = load_dataset('allenai/ai2_arc', 'ARC-Challenge',
+                                         cache_dir=cache_dir)
+            split_name = 'train' if 'train' in arc_challenge else list(arc_challenge.keys())[0]
+            dataset_size = len(arc_challenge[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                arc_challenge_samples = [arc_challenge[split_name][i] for i in indices]
+            else:
+                arc_challenge_samples = [arc_challenge[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(arc_challenge_samples)} samples from ARC-Challenge")
+        except Exception as e:
+            print(f"Error extracting from ARC-Challenge: {e}")
 
     # 10. OpenbookQA dataset
-    try:
-        openbook_qa = load_dataset('allenai/openbookqa', 'main',
-                                   cache_dir=cache_dir)
-        split_name = 'train' if 'train' in openbook_qa else list(openbook_qa.keys())[0]
-        dataset_size = len(openbook_qa[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            openbook_qa_samples = [openbook_qa[split_name][i] for i in indices]
-        else:
-            openbook_qa_samples = [openbook_qa[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(openbook_qa_samples)} samples from OpenbookQA")
-    except Exception as e:
-        print(f"Error extracting from OpenbookQA: {e}")
+    if "openbook_qa" in datasets:
+        try:
+            openbook_qa = load_dataset('allenai/openbookqa', 'main',
+                                       cache_dir=cache_dir)
+            split_name = 'train' if 'train' in openbook_qa else list(openbook_qa.keys())[0]
+            dataset_size = len(openbook_qa[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                openbook_qa_samples = [openbook_qa[split_name][i] for i in indices]
+            else:
+                openbook_qa_samples = [openbook_qa[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(openbook_qa_samples)} samples from OpenbookQA")
+        except Exception as e:
+            print(f"Error extracting from OpenbookQA: {e}")
 
     # 11. MATH dataset
-    try:
-        CATEGORY = ['algebra', 'counting_and_probability', 'geometry', 'intermediate_algebra', 'number_theory',
-                    'prealgebra', 'precalculus']
-        for cate in CATEGORY:
-            math = load_dataset('EleutherAI/hendrycks_math', cate,
-                                cache_dir=cache_dir)
-            split_name = 'train' if 'train' in math else list(math.keys())[0]
-            dataset_size = len(math[split_name])
-            target_samples = N // len(CATEGORY) + 1
-            if dataset_size >= target_samples:
-                indices = random.sample(range(dataset_size), target_samples)
-                math_samples.extend([math[split_name][i] for i in indices])
-            else:
-                math_samples.extend([math[split_name][i] for i in range(dataset_size)])
-        print(f"Successfully extracted {len(math_samples)} samples from MATH")
-    except Exception as e:
-        print(f"Error extracting from MATH: {e}")
+    if "math" in datasets:
+        try:
+            CATEGORY = ['algebra', 'counting_and_probability', 'geometry', 'intermediate_algebra', 'number_theory',
+                        'prealgebra', 'precalculus']
+            for cate in CATEGORY:
+                math = load_dataset('EleutherAI/hendrycks_math', cate,
+                                    cache_dir=cache_dir)
+                split_name = 'train' if 'train' in math else list(math.keys())[0]
+                dataset_size = len(math[split_name])
+                target_samples = N // len(CATEGORY) + 1
+                if dataset_size >= target_samples:
+                    indices = random.sample(range(dataset_size), target_samples)
+                    math_samples.extend([math[split_name][i] for i in indices])
+                else:
+                    math_samples.extend([math[split_name][i] for i in range(dataset_size)])
+            print(f"Successfully extracted {len(math_samples)} samples from MATH")
+        except Exception as e:
+            print(f"Error extracting from MATH: {e}")
 
     # 12. Geometry3K (multimodal geometry QA)
-    try:
-        geometry3k = load_dataset("hiyouga/geometry3k", cache_dir=cache_dir)
-        split_name = 'train' if 'train' in geometry3k else list(geometry3k.keys())[0]
-        dataset_size = len(geometry3k[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            geometry3k_samples = [geometry3k[split_name][i] for i in indices]
-        else:
-            geometry3k_samples = [geometry3k[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(geometry3k_samples)} samples from Geometry3K")
-    except Exception as e:
-        print(f"Error extracting from Geometry3K: {e}")
+    if "geometry3k" in datasets:
+        try:
+            geometry3k = load_dataset("hiyouga/geometry3k", cache_dir=cache_dir)
+            split_name = 'train' if 'train' in geometry3k else list(geometry3k.keys())[0]
+            dataset_size = len(geometry3k[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                geometry3k_samples = [geometry3k[split_name][i] for i in indices]
+            else:
+                geometry3k_samples = [geometry3k[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(geometry3k_samples)} samples from Geometry3K")
+        except Exception as e:
+            print(f"Error extracting from Geometry3K: {e}")
 
     # 13. MathVista (multimodal visual math QA)
-    try:
-        mathvista = load_dataset("AI4Math/MathVista", cache_dir=cache_dir)
-        split_name = 'train' if 'train' in mathvista else list(mathvista.keys())[0]
-        dataset_size = len(mathvista[split_name])
-        if dataset_size >= N:
-            indices = random.sample(range(dataset_size), N)
-            mathvista_samples = [mathvista[split_name][i] for i in indices]
-        else:
-            mathvista_samples = [mathvista[split_name][i] for i in range(dataset_size)]
-        print(f"Successfully extracted {len(mathvista_samples)} samples from MathVista")
-    except Exception as e:
-        print(f"Error extracting from MathVista: {e}")
+    if "mathvista" in datasets:
+        try:
+            mathvista = load_dataset("AI4Math/MathVista", cache_dir=cache_dir)
+            split_name = 'train' if 'train' in mathvista else list(mathvista.keys())[0]
+            dataset_size = len(mathvista[split_name])
+            if dataset_size >= N:
+                indices = random.sample(range(dataset_size), N)
+                mathvista_samples = [mathvista[split_name][i] for i in indices]
+            else:
+                mathvista_samples = [mathvista[split_name][i] for i in range(dataset_size)]
+            print(f"Successfully extracted {len(mathvista_samples)} samples from MathVista")
+        except Exception as e:
+            print(f"Error extracting from MathVista: {e}")
 
     # 14. Charades-Ego Activity (multimodal video activity recognition)
-    try:
-        # Need to provide data_root from argument
-        if charades_ego_path and os.path.exists(charades_ego_path):
-            sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
-            from charades_ego_to_json import load_charades_ego_samples
-            charades_ego_activity_samples = load_charades_ego_samples(
-                N=N, task_type="activity", data_root=charades_ego_path, 
-                random_seed=random_seed, cache_dir=cache_dir
-            )
-            print(f"Successfully extracted {len(charades_ego_activity_samples)} samples from Charades-Ego Activity")
-        else:
-            print("Skipping Charades-Ego Activity: charades_ego_path not set or invalid")
-    except Exception as e:
-        print(f"Error extracting from Charades-Ego Activity: {e}")
+    if "charades_ego_activity" in datasets:
+        try:
+            # Need to provide data_root from argument
+            if charades_ego_path and os.path.exists(charades_ego_path):
+                sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
+                from charades_ego_to_json import load_charades_ego_samples
+                charades_ego_activity_samples = load_charades_ego_samples(
+                    N=N, task_type="activity", data_root=charades_ego_path, 
+                    random_seed=random_seed, cache_dir=cache_dir
+                )
+                print(f"Successfully extracted {len(charades_ego_activity_samples)} samples from Charades-Ego Activity")
+            else:
+                print("Skipping Charades-Ego Activity: charades_ego_path not set or invalid")
+        except Exception as e:
+            print(f"Error extracting from Charades-Ego Activity: {e}")
     
     # 15. Charades-Ego Object (multimodal video object recognition)
     charades_ego_object_samples = []
-    try:
-        if charades_ego_path and os.path.exists(charades_ego_path):
-            sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
-            from charades_ego_to_json import load_charades_ego_samples
-            charades_ego_object_samples = load_charades_ego_samples(
-                N=N, task_type="object", data_root=charades_ego_path,
-                random_seed=random_seed, cache_dir=cache_dir
-            )
-            print(f"Successfully extracted {len(charades_ego_object_samples)} samples from Charades-Ego Object")
-        else:
-            print("Skipping Charades-Ego Object: charades_ego_path not set or invalid")
-    except Exception as e:
-        print(f"Error extracting from Charades-Ego Object: {e}")
+    if "charades_ego_object" in datasets:
+        try:
+            if charades_ego_path and os.path.exists(charades_ego_path):
+                sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
+                from charades_ego_to_json import load_charades_ego_samples
+                charades_ego_object_samples = load_charades_ego_samples(
+                    N=N, task_type="object", data_root=charades_ego_path,
+                    random_seed=random_seed, cache_dir=cache_dir
+                )
+                print(f"Successfully extracted {len(charades_ego_object_samples)} samples from Charades-Ego Object")
+            else:
+                print("Skipping Charades-Ego Object: charades_ego_path not set or invalid")
+        except Exception as e:
+            print(f"Error extracting from Charades-Ego Object: {e}")
     
     # 16. Charades-Ego Verb (multimodal video verb recognition)
     charades_ego_verb_samples = []
-    try:
-        if charades_ego_path and os.path.exists(charades_ego_path):
-            sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
-            from charades_ego_to_json import load_charades_ego_samples
-            charades_ego_verb_samples = load_charades_ego_samples(
-                N=N, task_type="verb", data_root=charades_ego_path,
-                random_seed=random_seed, cache_dir=cache_dir
-            )
-            print(f"Successfully extracted {len(charades_ego_verb_samples)} samples from Charades-Ego Verb")
-        else:
-            print("Skipping Charades-Ego Verb: charades_ego_path not set or invalid")
-    except Exception as e:
-        print(f"Error extracting from Charades-Ego Verb: {e}")
+    if "charades_ego_verb" in datasets:
+        try:
+            if charades_ego_path and os.path.exists(charades_ego_path):
+                sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "charades_ego"))
+                from charades_ego_to_json import load_charades_ego_samples
+                charades_ego_verb_samples = load_charades_ego_samples(
+                    N=N, task_type="verb", data_root=charades_ego_path,
+                    random_seed=random_seed, cache_dir=cache_dir
+                )
+                print(f"Successfully extracted {len(charades_ego_verb_samples)} samples from Charades-Ego Verb")
+            else:
+                print("Skipping Charades-Ego Verb: charades_ego_path not set or invalid")
+        except Exception as e:
+            print(f"Error extracting from Charades-Ego Verb: {e}")
 
     return {
         "natural_qa": natural_qa_samples,
@@ -342,7 +377,7 @@ def get_n_samples(N=10, random_seed=42, cache_dir=None, charades_ego_path=None):
         'charades_ego_verb': charades_ego_verb_samples,
     }
 
-def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42, charades_ego_path=None):
+def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42, charades_ego_path=None, datasets=None):
     """
     Generate query data from benchmark datasets.
     
@@ -350,6 +385,8 @@ def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42, chara
         sample_size: Number of samples per task
         train_ratio: Ratio for train/test split (default 0.8)
         random_seed: Random seed for reproducibility
+        charades_ego_path: Path to Charades-Ego dataset root
+        datasets: Optional list of dataset names to include
         
     Returns:
         tuple: (train_data, test_data) - Lists of dictionaries matching query_data format
@@ -360,7 +397,9 @@ def generate_query_data(sample_size=None, train_ratio=0.8, random_seed=42, chara
     n_samples = sample_size if sample_size else CASE_NUM
     
     print(f"Extracting {n_samples} samples per task...")
-    samples = get_n_samples(N=n_samples, charades_ego_path=charades_ego_path)
+    if datasets:
+        print(f"Datasets: {', '.join(datasets)}")
+    samples = get_n_samples(N=n_samples, charades_ego_path=charades_ego_path, datasets=datasets)
     
     data_all = []
     
@@ -630,6 +669,8 @@ def main():
                        help="Path to Charades-Ego dataset root")
     parser.add_argument("--test", action="store_true", 
                        help="Run with 10 samples for quick testing")
+    parser.add_argument("--datasets", type=str, default=None,
+                       help="Comma-separated list of datasets to include. If not specified, includes all.")
     
     args = parser.parse_args()
     
@@ -669,7 +710,8 @@ def main():
             sample_size=args.sample,
             train_ratio=config.get("data_generation", {}).get("train_ratio", 0.8),
             random_seed=config.get("data_generation", {}).get("random_seed", 42),
-            charades_ego_path=args.charades_ego_path
+            charades_ego_path=args.charades_ego_path,
+            datasets=args.datasets.split(',') if args.datasets else None
         )
         
         # Save to JSONL files

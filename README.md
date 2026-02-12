@@ -305,6 +305,23 @@ done
 
 This script will test each model in the list and display the response, helping you verify which models are available and working with your API key.
 
+### 🎨 Visual Data Processing & Training with ComfyUI
+
+LLMRouter offers a powerful **Visual Interface** via [ComfyUI](https://github.com/Comfy-Org/ComfyUI), transforming how you interact with the routing pipeline. Instead of editing YAML files and running terminal scripts, you can **drag, drop, and connect** nodes to build your workflow. 
+
+👉 **[Explore the Visual Interface Guide](ComfyUI/README.md)**
+
+<div align="center">
+  <img src="ComfyUI/assets/comfyui.png" alt="LLMRouter ComfyUI Interface" width="100%">
+</div>
+
+#### Key Features
+- **Modular Design**: Visually construct your pipeline by connecting nodes for Datasets, LLMs, and Routers.
+- **Visual Configuration**: Adjust parameters (e.g., sample size, model candidates) directly in the UI.
+- **Real-Time Monitoring**: Track the status of query generation, embedding extraction, and model training visually.
+- **End-to-End Automation**: Seamlessly link **Data Generation** $\to$ **Router Training** $\to$ **Evaluation** in one workspace.
+
+
 ### 📊 Preparing Training Data
 
 LLMRouter includes a complete data generation pipeline that transforms raw benchmark datasets into formatted routing data with embeddings. The pipeline supports 11 diverse benchmark datasets including Natural QA, Trivia QA, MMLU, GPQA, MBPP, HumanEval, GSM8K, CommonsenseQA, MATH, OpenbookQA, and ARC-Challenge.
@@ -320,6 +337,7 @@ The data generation pipeline consists of three main steps:
 3. **API Calling & Evaluation** - Call LLM APIs, evaluate responses, and generate unified embeddings + routing data
 
 #### Quick Start
+
 
 Start with the sample configuration file:
 
