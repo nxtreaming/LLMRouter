@@ -2,10 +2,14 @@
 
 This directory contains the [ComfyUI](https://github.com/Comfy-Org/ComfyUI) custom nodes for **LLMRouter**, allowing you to visually construct and execute the data generation and routing pipeline.
 
-By using ComfyUI, you can:
-- **Visually configure** datasets and LLM candidates.
-- **Automate** the entire pipeline: query generation -> embedding generation -> routing data creation.
-- **Monitor** progress through a graphical interface.
+**Why ComfyUI?** A shift from command-line to fully visual:
+
+- **🚫 No More CLI Commands**: Forget complex terminal scripts.
+- **🚫 No More Config Files**: Stop searching for `config.yaml`. All parameters are right on the nodes.
+- **✨ Everything is Visual**: Configure and execute via **Nodes and Wires**:
+  - **Visually Configure**: Select datasets (e.g., MMLU, GSM8K) and LLMs via toggle switches directly on the canvas.
+  - **End-to-End Pipeline**: Visually connect Query Generation $\to$ API Inference $\to$ Embeddings.
+  - **Instant Feedback**: Train routers (KNN, SVM, MLP) and watch performance metrics update in real-time.
 
 ## 🛠️ Installation & Setup
 
@@ -44,17 +48,19 @@ If you are running ComfyUI on a remote server (e.g., a compute cluster) and wish
 
 ### Finding the Nodes
 To use the nodes:
-1.  Open the ComfyUI web interface in your browser.
-2.  Navigate to the **`Nodes`** category.
-3.  You will see nodes like `Start: Select Dataset`, `Start: Select LLMs`, `Step 1: Generate Query Data`, etc.
+1.  Open the ComfyUI web interface.
+2.  Use the **Node Library** sidebar or **Right-click** on the canvas.
+3.  Navigate to the **`LLMRouter`** category.
+4.  You will find nodes organized by function:
+    - **Data**: `Select Datasets`, `Select LLMs`, `Generate Data`.
+    - **Single-Round**: `KNN Router`, `SVM Router`, `MLP Router`, etc.
+    - **Multi-Round / Agentic**: Specialized routers for complex tasks.
 
-### Loading the Template
-To use the template:
-1.  Open the ComfyUI web interface in your browser.
-2.  Navigate to the **`Workflows`** category.
-3.  Select `llm_router_example.json`.
-
-This will load a complete workflow connected and ready to run.
+### Loading the Example
+To use the ready-to-run example:
+1.  Click the **`Workflows`** tab (if using a modern UI) or use the **"Load"** button.
+2.  Select **`llm_router_example`**.
+3.  This loads a complete pipeline connecting **Dataset Selection** $\to$ **Data Generation** $\to$ **Router Training** $\to$ **Evaluation**.
 
 <div align="center">
   <img src="assets/comfyui.png" alt="LLMRouter Example in ComfyUI" width="800">
