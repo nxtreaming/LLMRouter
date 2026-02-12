@@ -4,12 +4,16 @@ This directory contains the [ComfyUI](https://github.com/Comfy-Org/ComfyUI) cust
 
 **Why ComfyUI?** A shift from command-line to fully visual:
 
-- **🚫 No More CLI Commands**: Forget complex terminal scripts.
-- **🚫 No More Config Files**: Stop searching for `config.yaml`. All parameters are right on the nodes.
-- **✨ Everything is Visual**: Configure and execute via **Nodes and Wires**:
+- **No More CLI Commands**: Forget complex terminal scripts.
+- **No More Config Files**: Stop searching for `config.yaml`. All parameters are right on the nodes.
+- **Everything is Visual**: Configure and execute via **Nodes and Connections**:
   - **Visually Configure**: Select datasets (e.g., MMLU, GSM8K) and LLMs via toggle switches directly on the canvas.
   - **End-to-End Pipeline**: Visually connect Query Generation $\to$ API Inference $\to$ Embeddings.
   - **Instant Feedback**: Train routers (KNN, SVM, MLP) and watch performance metrics update in real-time.
+
+<div align="center">
+  <img src="assets/comfyui.png" alt="LLMRouter Example in ComfyUI" width="800">
+</div>
 
 ## 🛠️ Installation & Setup
 
@@ -61,7 +65,3 @@ To use the ready-to-run example:
 1.  Click the **`Workflows`** tab (if using a modern UI) or use the **"Load"** button.
 2.  Select **`llm_router_example`**.
 3.  This loads a complete pipeline connecting **Dataset Selection** $\to$ **Data Generation** $\to$ **Router Training** $\to$ **Evaluation**.
-
-<div align="center">
-  <img src="assets/comfyui.png" alt="LLMRouter Example in ComfyUI" width="800">
-</div>
