@@ -36,6 +36,8 @@
 
 ## 📰 News
 
+- 🖥️ **[2026-02]**: **ComfyUI Interface** - We've released the visual interface for LLMRouter! Now you can visually construct data generation and routing pipelines, drag-and-drop nodes to train routers, and monitor performance in real-time. See [ComfyUI Interface](#comfyui-interface) for details.
+
 - 🔗 **[2026-02]**: **OpenClaw Router** - OpenAI-compatible server with OpenClaw integration! We've also released llmrouter-lib v0.3.1. Deploy LLMRouter as a production API server that works seamlessly with Slack, Discord, and other messaging platforms via [OpenClaw](https://github.com/openclaw/openclaw). Features include multimodal understanding (image/audio/video), retrieval-augmented routing memory, streaming support, and all 16+ LLMRouter routing strategies. See [OpenClaw Router Integration](#-openclaw-router-openclaw-integration). For deployment with social platforms like Slack, refer to the [Getting Started Guide](https://www.moltcn.com/start/getting-started.html) for step-by-step setup instructions.
 
 - ⭐ **[2026-01]**: **LLMRouter** just crossed 1K GitHub stars! We've also released llmrouter-lib v0.2.0. Updates include service-specific dict configs (OpenAI, Anthropic, etc.) and multimodal routing (Video/Image + Text) on Geometry3K, MathVista, and Charades-Ego—all in the first unified open-source LLM routing library with 16+ routers, a unified CLI, Gradio UI, and 11 datasets. Install via pip install llmrouter-lib. More updates soon! 🚀
@@ -50,6 +52,7 @@
 - [Training a Router](#training-a-router)
 - [Running Inference via a Router](#running-inference)
 - [Interactive Chat Interface with a Router](#interactive-chat-interface)
+- [ComfyUI Interface](#comfyui-interface)
 - [Creating Your Own Routers](#-creating-custom-routers)
 - [Adding Your Own Tasks](#-adding-your-own-tasks)
 - [OpenClaw Router (OpenClaw Integration)](#-openclaw-router-openclaw-integration)
@@ -305,21 +308,6 @@ done
 
 This script will test each model in the list and display the response, helping you verify which models are available and working with your API key.
 
-### 🎨 Visual Data Processing & Training with ComfyUI
-
-LLMRouter offers a powerful **Visual Interface** via [ComfyUI](https://github.com/Comfy-Org/ComfyUI), transforming how you interact with the routing pipeline. Instead of editing YAML files and running terminal scripts, you can **drag, drop, and connect** nodes to build your workflow. 
-
-👉 **[Explore the Visual Interface Guide](ComfyUI/README.md)**
-
-<div align="center">
-  <img src="ComfyUI/assets/comfyui.png" alt="LLMRouter ComfyUI Interface" width="100%">
-</div>
-
-#### Key Features
-- **Modular Design**: Visually construct your pipeline by connecting nodes for Datasets, LLMs, and Routers.
-- **Visual Configuration**: Adjust parameters (e.g., sample size, model candidates) directly in the UI.
-- **Real-Time Monitoring**: Track the status of query generation, embedding extraction, and model training visually.
-- **End-to-End Automation**: Seamlessly link **Data Generation** $\to$ **Router Training** $\to$ **Evaluation** in one workspace.
 
 
 ### 📊 Preparing Training Data
@@ -470,6 +458,71 @@ python -m llmrouter.cli.router_inference --router knnrouter --config config.yaml
 # Chat
 python -m llmrouter.cli.router_chat --router knnrouter --config config.yaml
 ```
+
+## 🖥️ ComfyUI Interface
+
+LLMRouter offers a powerful **Visual Interface** via [ComfyUI](https://github.com/Comfy-Org/ComfyUI), transforming how you interact with the routing pipeline. Instead of editing YAML files and running terminal scripts, you can drag, drop, and connect nodes to build your workflow.
+
+<div align="center">
+  <img src="assets/comfyui.png" alt="LLMRouter ComfyUI Interface" width="100%">
+</div>
+
+### Key Highlights
+
+- **Visual Configuration**: Forget complex YAML files and terminal scripts. Adjust parameters (e.g., sample size, model candidates) and select datasets directly on the canvas.
+- **End-to-End Automation**: Seamlessly link nodes to build a complete pipeline: Data Generation $\to$ Router Training $\to$ Evaluation.
+- **Real-Time Monitoring**: Track the status of query generation, embedding extraction, and model training with instant visual feedback.
+- **Modular Design**: Custom construct your pipeline by dragging, dropping, and connecting nodes for Datasets, LLMs, and Routers.
+
+### 🛠️ Installation & Setup
+
+Prerequisites: You must have [ComfyUI](https://github.com/Comfy-Org/ComfyUI) installed.
+
+To install the LLMRouter custom nodes, you need to create two symbolic links (soft links).
+
+#### 1. Link the Custom Nodes
+This allows ComfyUI to load the LLMRouter Python backend logic in the ComfyUI "Nodes" category.
+
+```bash
+ln -s /path/to/LLMRouter/ComfyUI /path/to/ComfyUI/custom_nodes/LLMRouter
+```
+
+#### 2. Link the Workflow Example (Optional)
+This allows you to see the pre-configured workflow in the ComfyUI "Workflows" category.
+
+```bash
+ln -s /path/to/LLMRouter/ComfyUI/workflows/llm_router_example.json /path/to/ComfyUI/user/default/workflows/llm_router_example.json
+```
+
+#### 3. Running the Application
+
+To start the ComfyUI server with the LLMRouter nodes:
+
+```bash
+python /path/to/ComfyUI/main.py
+```
+
+#### 4. Remote Access & Port Forwarding
+
+If you are running ComfyUI on a remote server (e.g., a compute cluster) and wish to access the interface locally, you can use SSH tunneling. Once the tunnel is established, access the interface at `http://127.0.0.1:8188`.
+
+### 🎮 Using the ComfyUI Interface
+
+#### Find the Nodes
+To use the nodes:
+1.  Open the ComfyUI web interface.
+2.  Use the **Node Library** sidebar or **Right-click** on the canvas.
+3.  Navigate to the **`LLMRouter`** category.
+4.  You will find nodes organized by function:
+    - **Data**: `Select Datasets`, `Select LLMs`, `Generate Data`.
+    - **Single-Round**: `KNN Router`, `SVM Router`, `MLP Router`, etc.
+    - **Multi-Round / Agentic**: Specialized routers for complex tasks.
+
+#### Load the Example
+To use the ready-to-run example:
+1.  Click the **`Workflows`** tab.
+2.  Select **`llm_router_example.json`**.
+3.  This loads a complete pipeline.
 
 ## 🔧 Creating Your Own Routers
 
